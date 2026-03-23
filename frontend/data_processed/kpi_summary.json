@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-03-23T03:22:00.397899Z",
+  "overview": {
+    "total_orders": 100,
+    "total_order_items": 167,
+    "unique_customers": 8,
+    "total_revenue_inr": 70878.31,
+    "total_billed_inr": 30829.33,
+    "total_paid_inr": 43704.78,
+    "revenue_leakage_inr": 27173.53,
+    "billing_coverage_pct": 43.5,
+    "payment_coverage_pct": 61.7
+  },
+  "lifecycle_stages": {
+    "cancelled": 56,
+    "billed": 22,
+    "ordered": 14,
+    "paid": 5,
+    "delivered": 3
+  },
+  "cycle_times": {
+    "avg_order_to_delivery_days": 0.52,
+    "median_order_to_delivery_days": 0.0,
+    "avg_delivery_to_billing_days": 3.84,
+    "avg_billing_to_payment_days": 0.0,
+    "avg_total_o2c_days": 6.84,
+    "median_total_o2c_days": 0.0
+  },
+  "issues": {
+    "orders_with_delivery_delay": 9,
+    "orders_payment_overdue": 0,
+    "orders_billing_cancelled": 56,
+    "orders_unpaid": 22,
+    "orders_missing_stage": 17,
+    "cancellation_rate_pct": 56.0,
+    "delivery_delay_rate_pct": 9.0
+  }
+}

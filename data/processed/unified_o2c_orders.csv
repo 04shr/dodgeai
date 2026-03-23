@@ -1,0 +1,101 @@
+sales_order_id,customer_id,customer_name,order_created_date,requested_delivery_date,payment_terms,currency,order_total_net_amount,total_items,total_billed_amount,total_paid_amount,lifecycle_stage,order_to_delivery_days,delivery_to_billing_days,billing_to_payment_days,total_o2c_days,is_delivery_delayed,is_payment_overdue,is_billing_cancelled,is_unpaid,missing_stage,max_issue_severity,revenue_leakage_amount
+740506,310000108,"Cardenas, Parker and Avila",2025-03-31,2025-03-31,Z009,INR,17108.25,5,0.0,0.0,delivered,0.0,,,,False,False,False,False,True,1,17108.25
+740507,310000109,Bradley-Kelley,2025-03-31,2025-03-31,Z009,INR,19021.27,4,0.0,0.0,delivered,0.0,,,,False,False,False,False,True,1,19021.27
+740508,310000109,Bradley-Kelley,2025-03-31,2025-03-31,Z009,INR,883.88,4,0.0,0.0,delivered,0.0,,,,False,False,False,False,True,1,883.88
+740509,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,229.66,1,459.32,813.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-583.34
+740510,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,221.19,1,442.38,783.03,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-561.8399999999999
+740511,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,250.0,1,500.0,885.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-635.0
+740512,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,249.15,1,498.3,882.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-632.85
+740513,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,363.56,1,727.12,1287.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-923.44
+740514,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,363.56,1,727.12,1287.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-923.44
+740515,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,363.56,1,727.12,1287.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-923.44
+740516,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,272.88,2,1091.52,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,272.88
+740517,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,363.56,1,727.12,1287.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-923.44
+740518,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,363.56,1,727.12,1287.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-923.44
+740519,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,329.66,1,659.32,1167.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-837.3399999999999
+740520,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,253.39,1,506.78,897.03,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-643.64
+740521,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,363.56,1,727.12,1287.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-923.44
+740522,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,329.66,1,659.32,1167.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-837.3399999999999
+740523,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,363.56,1,727.12,1287.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-923.44
+740524,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,253.39,1,506.78,897.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-643.61
+740525,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,215.25,1,430.5,761.97,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-546.72
+740526,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,185.59,1,371.18,657.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-471.40999999999997
+740527,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,449.24,2,1796.96,3180.6,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-2731.3599999999997
+740528,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,253.39,1,506.78,897.03,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-643.64
+740529,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,216.1,1,432.2,765.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-548.9
+740530,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,179.66,1,359.32,636.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-456.34000000000003
+740531,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,215.25,1,430.5,761.97,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-546.72
+740532,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,167.0,1,334.0,591.18,cancelled,5.0,39.0,0.0,44.0,True,False,True,False,False,2,-424.17999999999995
+740533,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,382.9,2,1531.6,2710.92,cancelled,5.0,39.0,0.0,44.0,True,False,True,False,False,2,-2328.02
+740534,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,310.76,1,621.52,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,310.76
+740535,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,179.0,1,358.0,633.66,cancelled,5.0,39.0,0.0,44.0,True,False,True,False,False,2,-454.65999999999997
+740536,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,168.64,1,337.28,597.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-428.36
+740537,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,245.9,1,491.8,870.48,cancelled,5.0,39.0,0.0,44.0,True,False,True,False,False,2,-624.58
+740538,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,287.29,1,574.58,1017.03,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-729.74
+740539,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,254.0,1,508.0,-899.16,paid,5.0,39.0,0.0,44.0,True,False,False,False,False,1,1153.1599999999999
+740540,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,253.39,1,506.78,897.03,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-643.64
+740541,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,299.0,1,598.0,1058.46,cancelled,5.0,39.0,0.0,44.0,True,False,True,False,False,2,-759.46
+740542,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,589.95,3,3539.7000000000003,6265.26,cancelled,5.0,39.0,0.0,44.0,True,False,True,False,False,2,-5675.31
+740543,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,245.9,1,245.9,0.0,billed,5.0,23.0,,,True,False,False,True,False,2,245.9
+740544,320000082,Nguyen-Davis,2025-04-02,2025-04-02,Z001,INR,287.9,1,287.9,0.0,billed,5.0,23.0,,,True,False,False,True,False,2,287.9
+740545,320000088,Flores-Simmons,2025-04-02,2025-04-02,Z001,INR,179.66,1,359.32,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,179.66
+740546,320000085,Hawkins Ltd,2025-04-02,2025-04-02,Z001,INR,221.19,1,442.38,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,221.19
+740547,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,180.34,1,360.68,638.4,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-458.05999999999995
+740548,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,151.69,1,303.38,536.97,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-385.28000000000003
+740549,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,2033.65,12,48807.6,86389.20000000001,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-84355.55000000002
+740550,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,329.66,1,659.32,1167.0,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-837.3399999999999
+740551,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,221.19,1,442.38,783.03,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-561.8399999999999
+740552,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,216.1,1,216.1,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,216.1
+740553,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,561.14,2,2244.56,3972.84,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-3411.7000000000003
+740554,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,422.88,1,845.76,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,422.88
+740555,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,429.66,3,2577.96,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,429.66
+740556,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,439.83,5,4398.3,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,439.83
+740557,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,439.83,5,4398.3,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,439.83
+740558,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,179.66,1,359.32,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,179.66
+740559,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,375.42,1,750.84,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,375.42
+740560,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,253.39,1,506.78,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,253.39
+740561,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,422.03,1,844.06,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,422.03
+740562,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,843.73,2,3374.92,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,843.73
+740563,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,481.44,1,962.88,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,481.44
+740564,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,761.86,6,9142.32,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,761.86
+740565,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,422.03,1,844.06,0.0,cancelled,0.0,0.0,,,False,False,True,False,False,1,422.03
+740566,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,337.29,1,674.58,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,337.29
+740567,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,191.53,1,383.06,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,191.53
+740568,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,455.93,1,911.86,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,455.93
+740569,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,422.03,1,844.06,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,422.03
+740570,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,422.03,1,844.06,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,422.03
+740571,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,253.39,1,506.78,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,253.39
+740572,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,215.25,1,430.5,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,215.25
+740573,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,842.93,2,3371.7200000000003,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,842.93
+740574,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,327.97,2,1311.88,2322.06,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-1994.09
+740575,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,215.25,1,430.5,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,215.25
+740576,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,473.73,1,947.46,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,473.73
+740577,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,464.41,1,928.82,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,464.41
+740578,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,464.41,1,928.82,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,464.41
+740579,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,464.41,1,928.82,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,464.41
+740580,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,464.41,1,928.82,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,464.41
+740581,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,205.93,1,411.86,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,205.93
+740582,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,216.1,1,432.2,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,216.1
+740583,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,216.1,1,432.2,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,216.1
+740584,320000108,Melton Group,2025-04-02,2025-04-02,Z001,INR,150.85,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,150.85
+740585,320000107,"Henderson, Garner and Graves",2025-04-02,2025-04-02,Z001,INR,177.97,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,177.97
+740586,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,422.03,1,844.06,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,422.03
+740587,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,464.41,1,928.82,0.0,billed,0.0,0.0,,,False,False,False,True,False,1,464.41
+740588,320000108,Melton Group,2025-04-02,2025-04-02,Z001,INR,118.65,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,118.65
+740589,320000107,"Henderson, Garner and Graves",2025-04-02,2025-04-02,Z001,INR,131.31,5,0.0,0.0,ordered,,,,,False,False,False,False,True,1,131.31
+740590,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,464.41,1,928.82,-1644.03,paid,0.0,0.0,0.0,0.0,False,False,False,False,False,0,2108.44
+740591,320000108,Melton Group,2025-04-02,2025-04-02,Z001,INR,303.39,3,0.0,0.0,ordered,,,,,False,False,False,False,True,1,303.39
+740592,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,634.75,1,1269.5,-2247.03,paid,0.0,0.0,0.0,0.0,False,False,False,False,False,0,2881.78
+740593,320000107,"Henderson, Garner and Graves",2025-04-02,2025-04-02,Z001,INR,422.04,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,422.04
+740594,320000108,Melton Group,2025-04-02,2025-04-02,Z001,INR,337.29,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,337.29
+740595,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,215.25,1,430.5,-761.97,paid,0.0,0.0,0.0,0.0,False,False,False,False,False,0,977.22
+740596,320000108,Melton Group,2025-04-02,2025-04-02,Z001,INR,202.54,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,202.54
+740597,320000107,"Henderson, Garner and Graves",2025-04-02,2025-04-02,Z001,INR,118.64,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,118.64
+740598,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,533.05,4,4264.4,7547.88,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-7014.83
+740599,320000108,Melton Group,2025-04-02,2025-04-02,Z001,INR,202.56,3,0.0,0.0,ordered,,,,,False,False,False,False,True,1,202.56
+740600,320000107,"Henderson, Garner and Graves",2025-04-02,2025-04-02,Z001,INR,169.49,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,169.49
+740601,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,464.41,1,928.82,-1644.03,paid,0.0,0.0,0.0,0.0,False,False,False,False,False,0,2108.44
+740602,320000107,"Henderson, Garner and Graves",2025-04-02,2025-04-02,Z001,INR,131.38,5,0.0,0.0,ordered,,,,,False,False,False,False,True,1,131.38
+740603,320000108,Melton Group,2025-04-02,2025-04-02,Z001,INR,133.9,1,0.0,0.0,ordered,,,,,False,False,False,False,True,1,133.9
+740604,320000083,"Nelson, Fitzpatrick and Jordan",2025-04-02,2025-04-02,Z001,INR,1091.53,4,8732.24,15456.12,cancelled,0.0,0.0,0.0,0.0,False,False,True,False,False,1,-14364.59
+740605,320000107,"Henderson, Garner and Graves",2025-04-02,2025-04-02,Z001,INR,435.57,5,0.0,0.0,ordered,,,,,False,False,False,False,True,1,435.57

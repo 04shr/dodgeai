@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>O2C · Relationship View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════════════ */
+:root {
+  --bg:        #0e0f13;
+  --bg-card:   #13151b;
+  --bg-raised: #1a1d26;
+  --bg-glass:  rgba(26,29,38,.7);
+  --border:    rgba(255,255,255,.06);
+  --border-hi: rgba(255,255,255,.13);
+
+  --ink:    #dde0ec;
+  --ink-2:  #7b7f96;
+  --ink-3:  #3e4258;
+
+  --gold:   #e8c97a;
+  --gold-2: rgba(232,201,122,.12);
+  --teal:   #4af0c4;
+  --teal-2: rgba(74,240,196,.1);
+  --rose:   #f27389;
+  --rose-2: rgba(242,115,137,.1);
+  --blue:   #6eb4ff;
+  --blue-2: rgba(110,180,255,.1);
+  --violet: #a78bfa;
+  --violet-2: rgba(167,139,250,.1);
+
+  --node-order:    #e8c97a;
+  --node-delivery: #4af0c4;
+  --node-billing:  #6eb4ff;
+  --node-payment:  #7cdb8a;
+  --node-journal:  #a78bfa;
+  --node-cancelled:#f27389;
+
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-body:  "DM Sans", system-ui, sans-serif;
+  --font-mono:  "DM Mono", monospace;
+
+  --r: 10px;
+  --rl: 16px;
+  --panel: 360px;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 99px; }
+
+/* ══════════════════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════════════════ */
+.shell {
+  display: grid;
+  grid-template-columns: 1fr var(--panel);
+  grid-template-rows: 56px 1fr;
+  height: 100vh;
+}
+
+/* ── Topbar ── */
+.topbar {
+  grid-column: 1 / -1;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+}
+.breadcrumb {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.breadcrumb span { color: var(--ink-2); }
+.breadcrumb b { color: var(--ink); font-weight: 500; }
+.topbar-divider { width: 1px; height: 20px; background: var(--border-hi); }
+.topbar-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+  font-style: italic;
+}
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* ── Search / Selector ── */
+.order-selector {
+  display: flex;
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: 0 14px;
+  gap: 8px;
+  height: 34px;
+  min-width: 280px;
+}
+.order-selector input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  width: 100%;
+}
+.order-selector input::placeholder { color: var(--ink-3); }
+.order-selector-label { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); white-space: nowrap; }
+
+/* ── Main canvas ── */
+.canvas {
+  background: var(--bg);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* subtle grid background */
+.canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* ── Right panel ── */
+.side-panel {
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════
+   FLOW DIAGRAM
+══════════════════════════════════════════════════════ */
+.flow-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  z-index: 1;
+  padding: 40px;
+}
+
+/* ── Stage row ── */
+.stage-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+/* ── Node ── */
+.node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+}
+.node-body {
+  width: 148px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--nb, var(--border-hi));
+  border-radius: var(--rl);
+  padding: 14px 16px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  position: relative;
+  overflow: hidden;
+}
+.node-body::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--nc, transparent);
+  border-radius: var(--rl) var(--rl) 0 0;
+}
+.node:hover .node-body,
+.node.active .node-body {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  border-color: var(--nc, var(--border-hi));
+}
+.node.active .node-body { background: var(--bg-raised); }
+
+.node-icon {
+  font-size: 18px;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+.node-type {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--nc, var(--ink-2));
+  margin-bottom: 4px;
+}
+.node-id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 116px;
+}
+.node-sub {
+  font-size: 10px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 116px;
+}
+.node-status {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--nc, var(--ink-3));
+}
+
+/* cancelled state */
+.node.cancelled .node-body { border-color: rgba(242,115,137,.3); }
+.node.cancelled .node-type { color: var(--rose); }
+
+/* ── Connector ── */
+.connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0 4px;
+}
+.connector-line {
+  width: 2px;
+  background: linear-gradient(var(--from, var(--border-hi)), var(--to, var(--border-hi)));
+  transition: background .3s;
+  position: relative;
+}
+.connector-line.active { opacity: 1; }
+.connector-arrow {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--ca, var(--border-hi));
+  margin-top: -1px;
+}
+.connector-label {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  padding: 2px 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  white-space: nowrap;
+  margin: 4px 0;
+}
+
+/* ── Horizontal connector (for items row) ── */
+.h-connector {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+.h-line {
+  height: 1.5px;
+  width: 40px;
+  background: var(--border-hi);
+}
+.h-arrow {
+  width: 0; height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid var(--border-hi);
+}
+
+/* ── Items row ── */
+.items-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 12px;
+  flex-wrap: nowrap;
+  max-width: 900px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.item-node {
+  flex-shrink: 0;
+  width: 120px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 9px 11px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.item-node:hover { border-color: var(--border-hi); }
+.item-node.active { border-color: var(--gold); }
+.item-node-type { font-size: 8px; font-family: var(--font-mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 3px; }
+.item-node-id { font-family: var(--font-mono); font-size: 10px; font-weight: 500; color: var(--ink); }
+.item-node-desc { font-size: 10px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--ink-3);
+  text-align: center;
+  padding: 60px;
+  z-index: 1;
+}
+.empty-glyph {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  font-style: italic;
+  opacity: .3;
+  line-height: 1;
+}
+.empty-text { font-size: 13px; color: var(--ink-2); max-width: 280px; line-height: 1.7; }
+.order-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.order-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-hi);
+  border-radius: 99px;
+  cursor: pointer;
+  color: var(--ink-2);
+  transition: all .15s;
+}
+.order-pill:hover { background: var(--gold-2); border-color: var(--gold); color: var(--gold); }
+
+/* ══════════════════════════════════════════════════════
+   RIGHT PANEL
+══════════════════════════════════════════════════════ */
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-tab {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  text-align: center;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color .15s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.panel-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.panel-tab:hover:not(.active) { color: var(--ink-2); }
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+}
+
+/* ── Detail card ── */
+.detail-header {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-type {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--nc, var(--ink-3));
+  margin-bottom: 4px;
+}
+.detail-id {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.detail-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: var(--bg-raised);
+  color: var(--nc, var(--ink-2));
+  border: 1px solid var(--nc-dim, var(--border));
+}
+
+.detail-fields { display: flex; flex-direction: column; gap: 1px; }
+.detail-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.detail-field:last-child { border-bottom: none; }
+.field-key {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.field-val {
+  font-size: 12px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  text-align: right;
+  word-break: break-all;
+}
+.field-val.good { color: var(--teal); }
+.field-val.warn { color: var(--gold); }
+.field-val.bad  { color: var(--rose); }
+
+/* ── Timeline mini ── */
+.mini-timeline {
+  margin: 16px 0;
+  padding: 14px;
+  background: var(--bg-raised);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+}
+.mini-timeline-title {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+}
+.timeline-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.tl-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 12px;
+  position: relative;
+}
+.tl-step:last-child { padding-bottom: 0; }
+.tl-step::after {
+  content: "";
+  position: absolute;
+  left: 6px; top: 14px; bottom: 0;
+  width: 1px;
+  background: var(--border-hi);
+}
+.tl-step:last-child::after { display: none; }
+.tl-dot {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--td-bg, var(--bg-raised));
+  border: 1.5px solid var(--td-c, var(--ink-3));
+  flex-shrink: 0;
+  margin-top: 2px;
+  z-index: 1;
+}
+.tl-dot.done { --td-bg: var(--teal-2); --td-c: var(--teal); }
+.tl-dot.active { --td-bg: var(--gold-2); --td-c: var(--gold); }
+.tl-dot.error { --td-bg: var(--rose-2); --td-c: var(--rose); }
+.tl-content { min-width: 0; }
+.tl-stage { font-size: 12px; font-weight: 500; color: var(--ink); }
+.tl-date { font-size: 10px; font-family: var(--font-mono); color: var(--ink-3); margin-top: 1px; }
+.tl-days {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--ink-2);
+  margin-top: 3px;
+  display: inline-block;
+}
+
+/* ── AI chat panel ── */
+.ai-panel { display: flex; flex-direction: column; height: 100%; }
+.ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.ai-msg {
+  padding: 10px 12px;
+  border-radius: var(--r);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 100%;
+}
+.ai-msg.system {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+}
+.ai-msg.user {
+  background: var(--gold-2);
+  border: 1px solid rgba(232,201,122,.2);
+  color: var(--ink);
+  align-self: flex-end;
+  font-size: 12px;
+}
+.ai-msg.assistant {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-hi);
+  color: var(--ink);
+}
+.ai-msg.assistant strong { color: var(--teal); font-weight: 500; }
+.ai-msg.assistant em { color: var(--gold); font-style: normal; }
+.ai-model-tag {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  margin-top: 5px;
+  display: block;
+}
+.ai-input-area {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+.ai-suggestions { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.ai-sug {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .12s;
+  text-align: left;
+  background: transparent;
+  width: 100%;
+}
+.ai-sug:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-2); }
+.ai-input-row { display: flex; gap: 6px; }
+.ai-input {
+  flex: 1;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 12px;
+  padding: 7px 12px;
+  outline: none;
+  resize: none;
+  min-height: 38px;
+  max-height: 80px;
+}
+.ai-input:focus { border-color: var(--gold); }
+.ai-send {
+  background: var(--gold);
+  color: #1a1508;
+  border: none;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity .15s;
+  flex-shrink: 0;
+}
+.ai-send:hover { opacity: .85; }
+.ai-send:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════
+   MISC
+══════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-hi);
+  background: var(--bg-raised);
+  color: var(--ink-2);
+  transition: all .12s;
+}
+.btn:hover { color: var(--ink); border-color: var(--border-hi); background: var(--bg-glass); }
+.btn-gold { background: var(--gold-2); border-color: rgba(232,201,122,.3); color: var(--gold); }
+.btn-gold:hover { background: rgba(232,201,122,.2); }
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--border-hi);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: none; } }
+.fade-in { animation: fadeIn .25s ease forwards; }
+
+@keyframes pulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }
+.pulse { animation: pulse 1.4s ease infinite; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <div class="breadcrumb">
+      <span>O2C Intel</span>
+      <span style="color:var(--ink-3)">/</span>
+      <b>Relationship View</b>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-title">Entity Explorer</div>
+
+    <div class="order-selector">
+      <span class="order-selector-label">Order ID</span>
+      <input type="text" id="order-input" placeholder="740539, 740556, 740506…" autocomplete="off"/>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn" onclick="clearView()">Clear</button>
+      <button class="btn btn-gold" onclick="document.getElementById('order-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        Explore
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Canvas ── -->
+  <main class="canvas" id="canvas">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-glyph">O→C</div>
+      <div class="empty-text">Enter an Order ID to explore its full lifecycle relationship — from sales order through delivery, billing, to payment.</div>
+      <div class="order-pills" id="quick-picks"></div>
+    </div>
+    <div class="flow-wrap" id="flow-wrap" style="display:none"></div>
+  </main>
+
+  <!-- ── Side panel ── -->
+  <aside class="side-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active" id="tab-detail" onclick="switchTab('detail')">Detail</div>
+      <div class="panel-tab" id="tab-ai" onclick="switchTab('ai')">AI Chat</div>
+    </div>
+
+    <!-- Detail tab -->
+    <div class="panel-body" id="panel-detail">
+      <div style="padding:40px 0;text-align:center;color:var(--ink-3)">
+        <div style="font-family:var(--font-serif);font-size:28px;font-style:italic;opacity:.3;margin-bottom:10px">?</div>
+        <div style="font-size:12px">Select an order to<br/>explore its entities</div>
+      </div>
+    </div>
+
+    <!-- AI tab -->
+    <div class="panel-body" id="panel-ai" style="display:none">
+      <div class="ai-panel">
+        <div class="ai-messages" id="ai-msgs">
+          <div class="ai-msg system">
+            Select an order and ask questions about its lifecycle, delays, or payment status.
+          </div>
+        </div>
+        <div class="ai-input-area">
+          <div class="ai-suggestions" id="ai-sugs">
+            <button class="ai-sug" onclick="askAI(this.textContent)">Why is this order delayed?</button>
+            <button class="ai-sug" onclick="askAI(this.textContent)">What is causing payment delay?</button>
+            <button class="ai-sug" onclick="askAI(this.textContent)">Summarise this order's issues</button>
+          </div>
+          <div class="ai-input-row">
+            <textarea class="ai-input" id="ai-input" placeholder="Ask about this order…" rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"></textarea>
+            <button class="ai-send" id="ai-send-btn" onclick="sendAI()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// CONFIG + DATA
+// ══════════════════════════════════════════════════════
+const API = 'http://localhost:8000';
+
+// ── Rule thresholds (match backend config) ───────────
+const FLAG_THRESHOLDS = {
+  DELIVERY_DELAY_DAYS:  3,
+  BILLING_DELAY_DAYS:   5,
+  PAYMENT_OVERDUE_DAYS: 30,
+};
+
+
+// Inline dataset — loaded from static files or API
+let ORDERS = [];   // unified_o2c_orders rows
+let ITEMS  = [];   // unified_o2c rows (item grain)
+let dataLoaded = false;
+let backendOnline = false;
+
+// Currently selected
+let SEL = { orderId: null, nodeType: null, nodeId: null, nodeData: null };
+
+// ══════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════
+async function boot() {
+
+  // Try backend
+  try {
+    const h = await fetch(`${API}/health`, {signal: AbortSignal.timeout(3000)}).then(r=>r.json());
+    if (h.status === 'ok') backendOnline = true;
+  } catch(e) {}
+
+  // Load dataset FIRST
+  await loadData();
+
+  // THEN generate sample IDs dynamically
+  const sampleIds = getSampleOrderIds();
+
+  document.getElementById('quick-picks').innerHTML =
+    sampleIds.map(id => 
+      `<div class="order-pill" onclick="loadOrder('${id}')">${id}</div>`
+    ).join('');
+
+  // Input handler
+  const inp = document.getElementById('order-input');
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadOrder(inp.value.trim());
+  });
+}
+
+async function loadData() {
+  if (dataLoaded) return;
+
+  // Try backend API first
+  if (backendOnline) {
+    try {
+      const [ordersRes, itemsRes] = await Promise.all([
+        fetch(`${API}/api/orders?limit=500`).then(r=>r.json()),
+        fetch(`${API}/api/orders/items-all`).then(r=>r.json()).catch(()=>null),
+      ]);
+      if (ordersRes?.data?.length) {
+        ORDERS = ordersRes.data;
+        // For items, still fall through to CSV — API items are per-order
+        console.log(`Loaded ${ORDERS.length} orders from API`);
+      }
+    } catch(e) { console.warn('API orders load failed:', e.message); }
+  }
+
+  // Load CSV files (primary for items, fallback for orders)
+  const bases = ['../data/processed/', 'data/processed/', './data/processed/'];
+  for (const base of bases) {
+    try {
+      const fetches = [fetch(base + 'unified_o2c.csv').then(r => { if(!r.ok) throw 0; return r.text(); })];
+      if (!ORDERS.length) {
+        fetches.unshift(fetch(base + 'unified_o2c_orders.csv').then(r => { if(!r.ok) throw 0; return r.text(); }));
+      }
+      const results = await Promise.all(fetches);
+      if (!ORDERS.length) { ORDERS = parseCSV(results[0]); ITEMS = parseCSV(results[1]); }
+      else { ITEMS = parseCSV(results[0]); }
+      dataLoaded = true;
+      console.log(`Loaded ${ORDERS.length} orders, ${ITEMS.length} items`);
+      return;
+    } catch(e) { continue; }
+  }
+  console.warn('Static data not found — some features limited');
+  dataLoaded = true;
+}
+
+function getSampleOrderIds() {
+  if (!ORDERS.length) return ['740539','740556','740506','740509','740584','740543'];
+  // Return one of each interesting stage
+  const byStage = {};
+  for (const o of ORDERS) {
+    const s = o.lifecycle_stage;
+    if (!byStage[s]) byStage[s] = String(o.sales_order_id);
+  }
+  const ids = Object.values(byStage).slice(0,6);
+  return ids.length ? ids : ORDERS.slice(0,6).map(o=>String(o.sales_order_id));
+}
+
+// ══════════════════════════════════════════════════════
+// DATA UTILS
+// ══════════════════════════════════════════════════════
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line => {
+    const vals=[]; let cur='', inQ=false;
+    for (const ch of line) {
+      if (ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}
+      else{cur+=ch;}
+    }
+    vals.push(cur.trim());
+    return Object.fromEntries(headers.map((h,i)=>[h, vals[i]??'']));
+  });
+}
+
+function getOrder(id) {
+  return ORDERS.find(o => String(o.sales_order_id) === String(id)) || null;
+}
+
+function getItems(orderId) {
+  return ITEMS.filter(i => String(i.sales_order_id) === String(orderId));
+}
+
+function fmt(v) {
+  if (!v || v === 'nan' || v === '') return '—';
+  return String(v);
+}
+function fmtDate(v) {
+  if (!v || v === 'nan') return '—';
+  return String(v).slice(0,10);
+}
+function fmtCurrency(v) {
+  if (!v || v === 'nan' || v === '') return '—';
+  const n = Number(v);
+  if (isNaN(n)) return '—';
+  return '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:2});
+}
+function fmtDays(v) {
+  if (!v || v === 'nan' || v === '') return '—';
+  const n = Number(v);
+  if (isNaN(n)) return '—';
+  return Math.round(n) + 'd';
+}
+function debounce(fn, ms) {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); };
+}
+
+// ══════════════════════════════════════════════════════
+// LOAD ORDER → BUILD GRAPH
+// ══════════════════════════════════════════════════════
+async function loadOrder(id) {
+  if (!id) return;
+  document.getElementById('order-input').value = id;
+  SEL.orderId = id;
+  SEL.nodeType = null;
+  SEL.nodeId = null;
+
+  let order = getOrder(id);
+  let items = getItems(id);
+
+  // Try API if not in local data
+  if (!order && backendOnline) {
+    try {
+      const [o, ctx] = await Promise.all([
+        fetch(`${API}/api/orders/${id}`).then(r=>r.json()),
+        fetch(`${API}/api/orders/${id}/items`).then(r=>r.json()),
+      ]);
+      if (o && !o.error) { order = o; items = ctx.items || []; }
+    } catch(e) {}
+  }
+
+  if (!order) {
+    showError(`Order ${id} not found. Try: ${SAMPLE_IDS.join(', ')}`);
+    return;
+  }
+
+  renderFlow(order, items);
+  showNodeDetail('order', order.sales_order_id, order, items);
+  switchTab('detail');
+}
+
+function clearView() {
+  SEL = { orderId: null, nodeType: null, nodeId: null, nodeData: null };
+  document.getElementById('order-input').value = '';
+  document.getElementById('empty-state').style.display = 'flex';
+  document.getElementById('flow-wrap').style.display = 'none';
+  document.getElementById('panel-detail').innerHTML = `
+    <div style="padding:40px 0;text-align:center;color:var(--ink-3)">
+      <div style="font-family:var(--font-serif);font-size:28px;font-style:italic;opacity:.3;margin-bottom:10px">?</div>
+      <div style="font-size:12px">Select an order to<br/>explore its entities</div>
+    </div>`;
+  document.getElementById('ai-msgs').innerHTML =
+    '<div class="ai-msg system">Select an order and ask questions about its lifecycle, delays, or payment status.</div>';
+}
+
+function showError(msg) {
+  const fw = document.getElementById('flow-wrap');
+  fw.style.display = 'flex';
+  document.getElementById('empty-state').style.display = 'none';
+  fw.innerHTML = `<div style="text-align:center;color:var(--rose);font-size:13px;font-family:var(--font-mono)">${msg}</div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER FLOW
+// ══════════════════════════════════════════════════════
+function renderFlow(order, items) {
+  const fw = document.getElementById('flow-wrap');
+  fw.style.display = 'flex';
+  document.getElementById('empty-state').style.display = 'none';
+  fw.innerHTML = '';
+  fw.className = 'flow-wrap fade-in';
+
+  const stage = order.lifecycle_stage;
+  const isCancelled = stage === 'cancelled';
+
+  // ── Real entity IDs from item data ──────────────────
+  const deliveryIds = [...new Set(items.map(i=>i.delivery_id).filter(isReal))];
+  const billingIds  = [...new Set(items.map(i=>i.billing_doc_id).filter(isReal))];
+  const acctDocs    = [...new Set(items.map(i=>i.accounting_document).filter(isReal))];
+
+  const hasDelivery = deliveryIds.length > 0 || ['delivered','billed','paid','cancelled'].includes(stage);
+  const hasBilling  = billingIds.length  > 0 || ['billed','paid','cancelled'].includes(stage);
+  const hasPayment  = !isCancelled && (acctDocs.length > 0 || stage === 'paid');
+
+  // ── Why Flagged analysis ─────────────────────────────
+  const flags = computeFlags(order, items);
+
+  // ── Real sub-labels ───────────────────────────────────
+  const item0   = items[0] || {};
+  const custShort = (order.customer_name||'').split(',')[0] || order.customer_id || '';
+  const orderSub  = fmtDate(order.order_created_date) + (custShort ? ' · ' + custShort : '');
+
+  const delCreated = fmtDate(item0.delivery_created_date);
+  const o2dDays    = isReal(order.order_to_delivery_days) ? fmtDays(order.order_to_delivery_days) : '';
+  const delSub     = delCreated !== '—' ? delCreated + (o2dDays ? ' · ' + o2dDays + ' O→D' : '') : (hasDelivery ? 'Pending' : '—');
+
+  const bilDate = fmtDate(item0.billing_date);
+  const d2bDays = isReal(order.delivery_to_billing_days) ? fmtDays(order.delivery_to_billing_days) : '';
+  const bilSub  = isCancelled ? 'Cancelled · ' + bilDate
+    : bilDate !== '—' ? bilDate + (d2bDays ? ' · ' + d2bDays + ' D→B' : '') : (hasBilling ? 'Pending' : '—');
+
+  const payDate = fmtDate(item0.payment_posting_date);
+  const b2pDays = isReal(order.billing_to_payment_days) ? fmtDays(order.billing_to_payment_days) : '';
+  const paySub  = payDate !== '—' ? payDate + (b2pDays ? ' · ' + b2pDays + ' B→P' : '') : (hasPayment ? 'Pending' : '—');
+
+  // ── Main stage row ────────────────────────────────────
+  const mainRow = document.createElement('div');
+  mainRow.className = 'stage-row';
+  mainRow.appendChild(makeFlowNode('order', fmt(order.sales_order_id), orderSub, '--node-order'));
+
+  if (hasDelivery) {
+    mainRow.appendChild(makeHConnEl());
+    const dId = deliveryIds[0] ? fmt(deliveryIds[0]) : '—';
+    mainRow.appendChild(makeFlowNode('delivery', dId, delSub, isCancelled ? '--node-cancelled' : '--node-delivery'));
+  }
+  if (hasBilling) {
+    mainRow.appendChild(makeHConnEl());
+    const bId = billingIds[0] ? fmt(billingIds[0]) : '—';
+    mainRow.appendChild(makeFlowNode('billing', bId, bilSub, isCancelled ? '--node-cancelled' : '--node-billing'));
+  }
+  if (hasPayment) {
+    mainRow.appendChild(makeHConnEl());
+    const pId = acctDocs[0] ? fmt(acctDocs[0]) : '—';
+    mainRow.appendChild(makeFlowNode('payment', pId, paySub, '--node-payment'));
+  }
+  fw.appendChild(mainRow);
+
+  // ── Cycle time chips ──────────────────────────────────
+  const cycleRow = document.createElement('div');
+  cycleRow.style.cssText = 'display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;justify-content:center';
+  const expPay = Number(order.expected_payment_days) || 30;
+  [
+    { l:'Order → Delivery',  v:order.order_to_delivery_days,    c:'var(--node-delivery)', t:3 },
+    { l:'Delivery → Billing', v:order.delivery_to_billing_days, c:'var(--node-billing)',  t:5 },
+    { l:'Billing → Payment',  v:order.billing_to_payment_days,  c:'var(--node-payment)',  t:expPay },
+    { l:'Total O2C',          v:order.total_o2c_days,           c:'var(--accent)',        t:null },
+  ].forEach(({l, v, c, t}) => {
+    const d = fmtDays(v);
+    const n = Number(v);
+    const over = t !== null && isReal(v) && !isNaN(n) && n > t;
+    const dc = over ? 'var(--red)' : (d === '—' ? 'var(--text-3)' : c);
+    cycleRow.innerHTML += `
+      <div style="background:var(--bg-card);border:1px solid ${over?'rgba(240,82,82,.3)':'var(--border)'};border-radius:8px;padding:7px 13px;text-align:center;min-width:76px">
+        <div style="font-size:9px;font-family:var(--font-m);color:var(--text-3);margin-bottom:2px">${l}</div>
+        <div style="font-family:var(--font-m);font-size:14px;font-weight:700;color:${dc}">${d}</div>
+        ${over?`<div style="font-size:8px;color:var(--red);font-family:var(--font-m);margin-top:1px">▲ >${t}d limit</div>`:''}
+      </div>`;
+  });
+  fw.appendChild(cycleRow);
+
+  // ── Why Flagged panel ─────────────────────────────────
+  if (flags.length > 0) {
+    const fs = document.createElement('div');
+    fs.style.cssText = 'margin-top:22px;width:100%;max-width:680px';
+    fs.innerHTML = `
+      <div style="font-size:9px;font-family:var(--font-m);color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Why flagged</div>
+      ${flags.map(fl=>`
+        <div style="display:flex;align-items:flex-start;gap:10px;background:var(--bg-card);border:1px solid ${fl.bc};border-left:3px solid ${fl.c};border-radius:10px;padding:10px 14px;margin-bottom:6px">
+          <span style="font-size:15px;flex-shrink:0;margin-top:1px">${fl.icon}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:10px;font-weight:600;color:${fl.c};font-family:var(--font-m);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">${fl.label}</div>
+            <div style="font-size:12px;color:var(--text-2);line-height:1.55">${fl.explanation}</div>
+            ${fl.fk?`<div style="margin-top:5px;font-size:10px;font-family:var(--font-m);color:var(--text-3)"><span style="color:var(--text-3)">${fl.fk}</span> = <span style="color:${fl.c}">${fl.fv}</span></div>`:''}
+          </div>
+        </div>`).join('')}`;
+    fw.appendChild(fs);
+  } else if (stage === 'paid') {
+    const ok = document.createElement('div');
+    ok.style.cssText = 'margin-top:18px;display:flex;align-items:center;gap:8px;background:rgba(34,212,122,.07);border:1px solid rgba(34,212,122,.2);border-radius:10px;padding:10px 16px;font-size:12px;color:var(--green)';
+    ok.innerHTML = `<span style="font-size:16px">✓</span> No issues — lifecycle complete. Payment cleared in ${fmtDays(order.billing_to_payment_days)} after billing.`;
+    fw.appendChild(ok);
+  }
+
+  // ── Line items row ────────────────────────────────────
+  if (items.length > 0) {
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:9px;font-family:var(--font-m);color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-top:24px;margin-bottom:8px;align-self:flex-start';
+    lbl.textContent = `Line items (${items.length})`;
+    fw.appendChild(lbl);
+
+    const ir = document.createElement('div');
+    ir.className = 'items-row';
+    items.slice(0, 7).forEach((item, idx) => {
+      if (idx > 0) { const s=document.createElement('div'); s.className='h-connector'; s.innerHTML='<div class="h-line"></div><div class="h-arrow"></div>'; ir.appendChild(s); }
+      const el = document.createElement('div');
+      el.className = 'item-node';
+      const iCan = String(item.is_cancelled)==='True'||String(item.is_billing_cancelled)==='True';
+      if (iCan) el.style.borderColor='rgba(240,82,82,.25)';
+      const desc = (item.material_desc||item.material_id||'—').slice(0, 26);
+      const amt  = isReal(item.item_net_amount) ? fmtCurrency(item.item_net_amount) : '—';
+      el.innerHTML = `
+        <div class="item-node-type">Item ${item.sales_order_item||idx+1}</div>
+        <div class="item-node-id">${(item.material_id||'—').slice(-9)}</div>
+        <div class="item-node-desc">${desc}</div>
+        <div style="font-size:10px;font-family:var(--font-m);color:${iCan?'var(--red)':'var(--text-3)'};margin-top:3px">${iCan?'Cancelled':amt}</div>`;
+      el.addEventListener('click', () => onItemClick(item));
+      ir.appendChild(el);
+    });
+    if (items.length > 7) {
+      const m=document.createElement('div'); m.style.cssText='font-size:10px;color:var(--text-3);font-family:var(--font-m);padding:0 10px;flex-shrink:0;align-self:center'; m.textContent=`+${items.length-7} more`; ir.appendChild(m);
+    }
+    fw.appendChild(ir);
+  }
+
+  // Activate first node
+  setTimeout(() => { const n=fw.querySelector('.node'); if(n) n.classList.add('active'); }, 50);
+}
+
+// ── Flow node factory ─────────────────────────────────
+function makeFlowNode(type, id, sub, color) {
+  const icons = {order:'📋', delivery:'🚚', billing:'🧾', payment:'💳'};
+  const n = document.createElement('div');
+  n.className = 'node';
+  n.style.setProperty('--nc', `var(${color})`);
+  n.dataset.type = type;
+  n.dataset.id   = String(id);
+  n.setAttribute('tabindex','0');
+  n.innerHTML = `
+    <div class="node-body">
+      <div class="node-status"></div>
+      <div class="node-icon">${icons[type]||'◆'}</div>
+      <div class="node-type">${type}</div>
+      <div class="node-id" title="${id}">${String(id).length>13?String(id).slice(-12):String(id)}</div>
+      <div class="node-sub">${sub}</div>
+    </div>`;
+  n.addEventListener('click', () => { document.querySelectorAll('.node').forEach(x=>x.classList.remove('active')); n.classList.add('active'); onNodeClick(type, String(id)); });
+  n.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') n.click(); });
+  return n;
+}
+
+function makeHConnEl() {
+  const c = document.createElement('div');
+  c.className = 'h-connector';
+  c.innerHTML = '<div class="h-line"></div><div class="h-arrow"></div>';
+  return c;
+}
+
+function isReal(v) {
+  return v !== undefined && v !== null && String(v).trim() !== '' && String(v) !== 'nan' && String(v) !== 'NaN';
+}
+
+// ══════════════════════════════════════════════════════
+// RULE-BASED FLAG ENGINE
+// ══════════════════════════════════════════════════════
+// FLAG_THRESHOLDS defined at top of script
+
+function computeFlags(order, items) {
+  const flags = [];
+  const item0 = items[0] || {};
+  const stage = order.lifecycle_stage;
+
+  // ── Rule 1: Billing Cancelled ────────────────────────
+  // Field: is_billing_cancelled == True
+  if (String(order.is_billing_cancelled) === 'True' || String(item0.is_cancelled) === 'True') {
+    const bilId = items.find(i=>isReal(i.billing_doc_id))?.billing_doc_id || '—';
+    flags.push({
+      icon: '✕', label: 'Billing cancelled',
+      c: '#f05252', bc: 'rgba(240,82,82,.15)',
+      explanation: `Billing document ${fmt(bilId)} was cancelled or reversed. Goods may have been delivered but the invoice was voided — common causes: customer return, pricing dispute, or duplicate billing. No revenue will be collected unless a replacement invoice is raised.`,
+      fk: 'is_billing_cancelled', fv: 'True',
+    });
+  }
+
+  // ── Rule 2: Unpaid Invoice ───────────────────────────
+  // Field: is_unpaid == True OR (has_billing AND NOT has_payment AND NOT cancelled)
+  const isUnpaid = String(order.is_unpaid) === 'True' ||
+    (String(item0.has_billing) === 'True' && String(item0.has_payment) !== 'True' && stage !== 'cancelled');
+  if (isUnpaid && stage !== 'paid') {
+    const bilDate = fmtDate(item0.billing_date);
+    const expDays = Number(order.expected_payment_days || order.payment_terms === 'Z009' ? 0 : 30);
+    flags.push({
+      icon: '🧾', label: 'Unpaid invoice',
+      c: '#38b6ff', bc: 'rgba(56,182,255,.12)',
+      explanation: `Invoice raised on ${bilDate} but no payment received yet. Amount due: ${fmtCurrency(order.order_total_net_amount)}. Payment terms: ${order.payment_terms || '—'} (Net ${expDays}d). If past due date, escalate to accounts receivable.`,
+      fk: 'is_unpaid', fv: 'True',
+    });
+  }
+
+  // ── Rule 3: Delivery Delayed ─────────────────────────
+  // Field: is_delivery_delayed == True OR order_to_delivery_days > threshold
+  const o2d = Number(order.order_to_delivery_days);
+  const isDelayed = String(order.is_delivery_delayed) === 'True' ||
+    (isReal(order.order_to_delivery_days) && !isNaN(o2d) && o2d > FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS);
+  if (isDelayed) {
+    const plant = item0.delivery_plant || item0.plant || '—';
+    flags.push({
+      icon: '🚚', label: `Delivery delayed (${Math.round(o2d)}d)`,
+      c: '#f5c842', bc: 'rgba(245,200,66,.12)',
+      explanation: `Delivery took ${Math.round(o2d)} days — exceeds the ${FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS}-day threshold. Created on ${fmtDate(order.order_created_date)}, delivered on ${fmtDate(item0.delivery_created_date)}. Check warehouse capacity, stock availability, or routing at plant ${plant}.`,
+      fk: 'order_to_delivery_days', fv: Math.round(o2d) + 'd (limit: ' + FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS + 'd)',
+    });
+  }
+
+  // ── Rule 4: Missing Lifecycle Stage ──────────────────
+  // Field: missing_stage == True OR has_delivery/has_billing missing
+  const hasDel = String(item0.has_delivery) === 'True' || items.some(i=>isReal(i.delivery_id));
+  const hasBil = String(item0.has_billing)  === 'True' || items.some(i=>isReal(i.billing_doc_id));
+  const hasPay = String(item0.has_payment)  === 'True' || items.some(i=>isReal(i.payment_posting_date));
+  const isMissing = String(order.missing_stage) === 'True' ||
+    (['billed','paid'].includes(stage) && !hasDel) ||
+    (['paid'].includes(stage) && !hasBil);
+
+  if (isMissing) {
+    const missing = [];
+    if (!hasDel) missing.push('Delivery');
+    if (!hasBil && stage !== 'ordered' && stage !== 'delivered') missing.push('Billing');
+    if (!hasPay && stage !== 'ordered' && stage !== 'delivered' && stage !== 'billed') missing.push('Payment');
+    if (missing.length === 0 && stage === 'ordered') missing.push('Delivery');
+    flags.push({
+      icon: '?', label: `Missing stage${missing.length ? ': ' + missing.join(', ') : ''}`,
+      c: '#a78bfa', bc: 'rgba(167,139,250,.12)',
+      explanation: `The order is at <strong>${stage}</strong> stage but the following lifecycle stages have no records: <strong>${missing.join(', ') || 'unknown'}</strong>. This breaks the audit trail — check SAP document flow for gaps or data extraction issues.`,
+      fk: 'missing_stage', fv: 'True',
+    });
+  }
+
+  // ── Rule 5: Payment Overdue ──────────────────────────
+  // Field: is_payment_overdue == True OR billing_to_payment_days > expected
+  const b2p = Number(order.billing_to_payment_days);
+  const expPay = Number(order.expected_payment_days) || FLAG_THRESHOLDS.PAYMENT_OVERDUE_DAYS;
+  const isOverdue = String(order.is_payment_overdue) === 'True' ||
+    (isReal(order.billing_to_payment_days) && !isNaN(b2p) && b2p > expPay);
+  if (isOverdue) {
+    flags.push({
+      icon: '⏰', label: `Payment overdue (${Math.round(b2p)}d vs ${expPay}d terms)`,
+      c: '#ff8c42', bc: 'rgba(255,140,66,.12)',
+      explanation: `Payment took ${Math.round(b2p)} days after invoicing — exceeds the agreed ${expPay}-day payment terms (${order.payment_terms || '—'}). Consider sending a payment reminder or escalating to credit management.`,
+      fk: 'billing_to_payment_days', fv: Math.round(b2p) + 'd (terms: ' + expPay + 'd)',
+    });
+  }
+
+  // ── Rule 6: Billing Delay ────────────────────────────
+  // Field: delivery_to_billing_days > threshold (even if not a pipeline flag)
+  const d2b = Number(order.delivery_to_billing_days);
+  if (isReal(order.delivery_to_billing_days) && !isNaN(d2b) && d2b > FLAG_THRESHOLDS.BILLING_DELAY_DAYS) {
+    flags.push({
+      icon: '📄', label: `Billing delay (${Math.round(d2b)}d)`,
+      c: '#f5c842', bc: 'rgba(245,200,66,.12)',
+      explanation: `Billing was raised ${Math.round(d2b)} days after goods delivery — expected within ${FLAG_THRESHOLDS.BILLING_DELAY_DAYS} days. This delays cash collection. Check if billing runs are scheduled, if there are manual blocks, or if approval workflows are causing bottlenecks.`,
+      fk: 'delivery_to_billing_days', fv: Math.round(d2b) + 'd (limit: ' + FLAG_THRESHOLDS.BILLING_DELAY_DAYS + 'd)',
+    });
+  }
+
+  // ── Rule 7: Rejection ────────────────────────────────
+  if (items.some(i => isReal(i.rejection_reason))) {
+    const reasons = [...new Set(items.map(i=>i.rejection_reason).filter(isReal))];
+    flags.push({
+      icon: '🚫', label: 'Line item rejected',
+      c: '#f05252', bc: 'rgba(240,82,82,.12)',
+      explanation: `One or more line items have rejection reasons: <strong>${reasons.join(', ')}</strong>. Rejected items won't be delivered or billed. Review the rejection cause and determine if re-order is needed.`,
+      fk: 'rejection_reason', fv: reasons.join(', '),
+    });
+  }
+
+  // ── Rule 8: Delivery Block ───────────────────────────
+  if (items.some(i => isReal(i.delivery_block) && String(i.delivery_block) !== 'False') ||
+      (isReal(order.delivery_block_reason) && order.delivery_block_reason !== 'False')) {
+    flags.push({
+      icon: '🔒', label: 'Delivery block active',
+      c: '#f5c842', bc: 'rgba(245,200,66,.12)',
+      explanation: `A delivery block is set on this order (reason: ${order.delivery_block_reason || item0.delivery_block || '—'}). The order cannot be shipped until the block is removed by the responsible team.`,
+      fk: 'delivery_block_reason', fv: order.delivery_block_reason || item0.delivery_block || '—',
+    });
+  }
+
+  return flags;
+}
+
+
+
+// ══════════════════════════════════════════════════════
+// NODE CLICK HANDLERS
+// ══════════════════════════════════════════════════════
+function onNodeClick(type, id, order, items) {
+  // Update active state
+  document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  SEL.nodeType = type;
+  SEL.nodeId = id;
+  showNodeDetail(type, id, order, items);
+  switchTab('detail');
+}
+
+function onItemClick(item) {
+  document.querySelectorAll('.item-node').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  SEL.nodeType = 'item';
+  SEL.nodeData = item;
+  showItemDetail(item);
+  switchTab('detail');
+}
+
+// ══════════════════════════════════════════════════════
+// DETAIL PANELS
+// ══════════════════════════════════════════════════════
+function showNodeDetail(type, id, order, items) {
+  const el = document.getElementById('panel-detail');
+  if (!el) return;
+  const isCan = order.lifecycle_stage === 'cancelled';
+
+  const NC = {
+    order:    '#e8c97a', delivery: '#4af0c4',
+    billing:  isCan ? '#f05252' : '#6eb4ff',
+    payment:  '#7cdb8a',
+  }[type] || '#888';
+
+  const deliveryIds = [...new Set(items.map(i=>i.delivery_id).filter(isReal))];
+  const billingIds  = [...new Set(items.map(i=>i.billing_doc_id).filter(isReal))];
+  const acctDocs    = [...new Set(items.map(i=>i.accounting_document).filter(isReal))];
+  const item0 = items.find(i => {
+    if (type==='delivery') return isReal(i.delivery_id);
+    if (type==='billing')  return isReal(i.billing_doc_id);
+    if (type==='payment')  return isReal(i.accounting_document);
+    return true;
+  }) || {};
+
+  let title = '', status = order.lifecycle_stage, fields = [];
+
+  if (type === 'order') {
+    title = fmt(order.sales_order_id);
+    fields = [
+      { k:'customer_id',        v:order.customer_id },
+      { k:'customer_name',      v:order.customer_name },
+      { k:'order_created_date', v:fmtDate(order.order_created_date) },
+      { k:'requested_delivery', v:fmtDate(order.requested_delivery_date) },
+      { k:'payment_terms',      v:order.payment_terms },
+      { k:'currency',           v:order.currency },
+      { k:'order_total_amount', v:fmtCurrency(order.order_total_net_amount), cls:'good' },
+      { k:'total_paid_amount',  v:fmtCurrency(order.total_paid_amount),      cls: Number(order.total_paid_amount)>0?'good':'warn' },
+      { k:'total_items',        v:order.total_items },
+      { k:'lifecycle_stage',    v:order.lifecycle_stage },
+      { k:'max_issue_severity', v:order.max_issue_severity||'0',
+        cls: Number(order.max_issue_severity)>=3?'bad':Number(order.max_issue_severity)>0?'warn':'' },
+      { k:'revenue_leakage',    v:fmtCurrency(order.revenue_leakage_amount),
+        cls: Number(order.revenue_leakage_amount)>0?'bad':'' },
+    ];
+  } else if (type === 'delivery') {
+    title = deliveryIds[0] ? fmt(deliveryIds[0]) : id;
+    status = Number(order.order_to_delivery_days) > FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS ? 'delayed' : 'on time';
+    fields = [
+      { k:'delivery_id',              v:fmt(deliveryIds[0]||'—') },
+      { k:'delivery_created_date',    v:fmtDate(item0.delivery_created_date) },
+      { k:'actual_goods_mvmt_date',   v:fmtDate(item0.actual_goods_movement_date)||'—' },
+      { k:'goods_movement_status',    v:item0.goods_movement_status||'—' },
+      { k:'picking_status',           v:item0.picking_status||'—' },
+      { k:'shipping_point',           v:item0.shipping_point||'—' },
+      { k:'delivery_plant',           v:item0.delivery_plant||item0.plant||'—' },
+      { k:'storage_location',         v:item0.storage_location||'—' },
+      { k:'overall_delivery_status',  v:order.overall_delivery_status||'—' },
+      { k:'order_to_delivery_days',   v:fmtDays(order.order_to_delivery_days),
+        cls: Number(order.order_to_delivery_days)>FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS?'bad':'good' },
+    ];
+  } else if (type === 'billing') {
+    title = billingIds[0] ? fmt(billingIds[0]) : id;
+    status = isCan ? 'cancelled' : 'active';
+    fields = [
+      { k:'billing_doc_id',       v:fmt(billingIds[0]||'—') },
+      { k:'billing_type',         v:item0.billing_type||'—' },
+      { k:'billing_date',         v:fmtDate(item0.billing_date) },
+      { k:'billing_created',      v:fmtDate(item0.billing_created)||'—' },
+      { k:'billing_amount',       v:fmtCurrency(item0.billing_amount||item0.billed_amount_sum),
+        cls: isCan?'bad':'good' },
+      { k:'billed_qty',           v:item0.billed_qty||'—' },
+      { k:'is_cancelled',         v:isCan?'Yes':'No', cls:isCan?'bad':'good' },
+      { k:'billing_customer_id',  v:fmt(item0.billing_customer_id||order.customer_id||'—') },
+      { k:'accounting_document',  v:fmt(acctDocs[0]||'—') },
+      { k:'company_code',         v:item0.company_code||order.company_code||'ABCD' },
+      { k:'delivery_to_billing_days', v:fmtDays(order.delivery_to_billing_days),
+        cls: Number(order.delivery_to_billing_days)>FLAG_THRESHOLDS.BILLING_DELAY_DAYS?'bad':'' },
+    ];
+  } else if (type === 'payment') {
+    title = acctDocs[0] ? fmt(acctDocs[0]) : id;
+    status = 'cleared';
+    const expPay = Number(order.expected_payment_days) || FLAG_THRESHOLDS.PAYMENT_OVERDUE_DAYS;
+    const b2p = Number(order.billing_to_payment_days);
+    fields = [
+      { k:'accounting_document',   v:fmt(acctDocs[0]||'—') },
+      { k:'payment_posting_date',  v:fmtDate(item0.payment_posting_date) },
+      { k:'payment_clearing_date', v:fmtDate(item0.payment_clearing_date) },
+      { k:'total_amount_paid',     v:fmtCurrency(item0.total_amount_paid||order.total_paid_amount),
+        cls: 'good' },
+      { k:'currency',              v:item0.currency||item0.pay_currency||order.currency||'INR' },
+      { k:'gl_account',            v:item0.gl_account||'—' },
+      { k:'billing_to_pay_days',   v:fmtDays(order.billing_to_payment_days),
+        cls: b2p > expPay ? 'bad' : 'good' },
+      { k:'payment_terms',         v:order.payment_terms || '—' },
+      { k:'expected_pay_days',     v:expPay + 'd' },
+    ];
+  }
+
+  // Build timeline for this node
+  const tlSteps = buildTimeline(order, items);
+
+  el.innerHTML = `<div class="fade-in">
+    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:2px">
+      <div style="font-size:9px;font-family:var(--font-m);text-transform:uppercase;letter-spacing:.12em;color:${NC};margin-bottom:4px">${type}</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px;word-break:break-all">${title}</div>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--font-m);
+           padding:2px 9px;border-radius:99px;background:var(--bg-raised);color:${NC};border:1px solid ${NC}33">
+        <span style="width:5px;height:5px;border-radius:50%;background:${NC};display:inline-block"></span>${status}
+      </span>
+    </div>
+
+    <div style="margin:14px 0;background:var(--bg-raised);border-radius:8px;border:1px solid var(--border);padding:12px">
+      <div style="font-size:9px;font-family:var(--font-m);text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-bottom:10px">Lifecycle timeline</div>
+      ${tlSteps.map((s,i) => `
+        <div style="display:flex;align-items:flex-start;gap:8px;${i<tlSteps.length-1?'padding-bottom:10px;':''}position:relative">
+          ${i<tlSteps.length-1?`<div style="position:absolute;left:5px;top:13px;bottom:0;width:1px;background:var(--border-med)"></div>`:''}
+          <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;margin-top:3px;z-index:1;
+               border:1.5px solid ${s.cls==='done'?'var(--green)':s.cls==='active'?'var(--accent)':s.cls==='error'?'var(--red)':'var(--text-3)'};
+               background:${s.cls==='done'?'rgba(34,212,122,.12)':s.cls==='active'?'var(--accent-glow)':s.cls==='error'?'rgba(240,82,82,.12)':'var(--bg-raised)'}"></div>
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--text)">${s.stage}</div>
+            <div style="font-size:10px;font-family:var(--font-m);color:var(--text-3)">${s.date}${s.sub?` · ${s.sub}`:''}</div>
+            ${s.days?`<div style="font-size:9px;font-family:var(--font-m);background:var(--bg);color:var(--text-2);padding:1px 5px;border-radius:3px;margin-top:2px;display:inline-block">${s.days}</div>`:''}
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:0">
+      ${fields.map(fld=>`
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);gap:10px">
+          <span style="font-size:10px;color:var(--text-3);font-family:var(--font-m);white-space:nowrap;flex-shrink:0">${fld.k}</span>
+          <span style="font-size:11px;font-family:var(--font-m);text-align:right;word-break:break-all;
+               color:${fld.cls==='good'?'var(--green)':fld.cls==='bad'?'var(--red)':fld.cls==='warn'?'var(--yellow)':'var(--text)'}">${fld.v||'—'}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+function showItemDetail(item) {
+  const el = document.getElementById('panel-detail');
+  if (!el) return;
+  const iCan = String(item.is_cancelled)==='True'||String(item.is_billing_cancelled)==='True';
+  const iRej = isReal(item.rejection_reason);
+  const fields = [
+    { k:'sales_order_id',     v:fmt(item.sales_order_id) },
+    { k:'sales_order_item',   v:item.sales_order_item },
+    { k:'material_id',        v:item.material_id },
+    { k:'material_desc',      v:item.material_desc||'—' },
+    { k:'material_group',     v:item.material_group||'—' },
+    { k:'quantity',           v:`${item.item_qty||'—'} ${item.qty_unit||''}`.trim() },
+    { k:'item_net_amount',    v:fmtCurrency(item.item_net_amount), cls:'good' },
+    { k:'plant',              v:item.plant||item.delivery_plant||'—' },
+    { k:'storage_location',   v:item.storage_location||'—' },
+    { k:'lifecycle_stage',    v:item.lifecycle_stage||'—' },
+    { k:'is_cancelled',       v:iCan?'Yes':'No', cls:iCan?'bad':'' },
+    { k:'rejection_reason',   v:item.rejection_reason||'—', cls:iRej?'bad':'' },
+    { k:'delivery_id',        v:fmt(item.delivery_id||'—') },
+    { k:'billing_doc_id',     v:fmt(item.billing_doc_id||'—') },
+    { k:'billed_qty',         v:item.billed_qty||'—' },
+    { k:'billed_amount_sum',  v:fmtCurrency(item.billed_amount_sum) },
+    { k:'picking_status',     v:item.picking_status||'—' },
+    { k:'has_delivery_block', v:item.has_delivery_block||'—' },
+    { k:'issue_severity',     v:item.issue_severity||'0',
+      cls: Number(item.issue_severity)>=3?'bad':Number(item.issue_severity)>0?'warn':'' },
+  ];
+  el.innerHTML = `<div class="fade-in">
+    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:12px">
+      <div style="font-size:9px;font-family:var(--font-m);text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:4px">Line item</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">Item ${item.sales_order_item||'—'}</div>
+      <div style="font-size:11px;color:var(--text-2);font-family:var(--font-m)">${(item.material_desc||item.material_id||'').slice(0,40)}</div>
+      ${iCan?`<div style="margin-top:6px"><span class="badge b-cancelled">Cancelled</span></div>`:''}
+      ${iRej?`<div style="margin-top:4px"><span class="badge b-danger">Rejected: ${item.rejection_reason}</span></div>`:''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      ${fields.map(fld=>`
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);gap:10px">
+          <span style="font-size:10px;color:var(--text-3);font-family:var(--font-m);white-space:nowrap;flex-shrink:0">${fld.k}</span>
+          <span style="font-size:11px;font-family:var(--font-m);text-align:right;word-break:break-all;
+               color:${fld.cls==='good'?'var(--green)':fld.cls==='bad'?'var(--red)':fld.cls==='warn'?'var(--yellow)':'var(--text)'}">${fld.v||'—'}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+// ══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.getElementById('tab-detail').classList.toggle('active', tab==='detail');
+  document.getElementById('tab-ai').classList.toggle('active', tab==='ai');
+  document.getElementById('panel-detail').style.display = tab==='detail' ? '' : 'none';
+  document.getElementById('panel-ai').style.display = tab==='ai' ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════════
+// AI CHAT
+// ══════════════════════════════════════════════════════
+function askAI(q) {
+  document.getElementById('ai-input').value = q;
+  sendAI();
+}
+
+async function sendAI() {
+  const input = document.getElementById('ai-input');
+  const msgs  = document.getElementById('ai-msgs');
+  const btn   = document.getElementById('ai-send-btn');
+  const q = input.value.trim();
+  if (!q) return;
+  if (!SEL.orderId) {
+    appendMsg('system', 'Please select an order first by entering an Order ID above.', msgs);
+    return;
+  }
+  input.value = '';
+  appendMsg('user', q, msgs);
+
+  btn.disabled = true;
+  const thinking = appendMsg('assistant', '<div class="spinner pulse"></div>', msgs);
+
+  // Build context string for the question
+  const order = getOrder(SEL.orderId);
+  const items = getItems(SEL.orderId);
+  const context = buildAIContext(order, items, SEL.orderId);
+
+  // Try backend AI endpoint
+  if (backendOnline) {
+    try {
+      const res = await fetch(`${API}/api/ai/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: `Order ${SEL.orderId}: ${q}\n\nContext:\n${context}` }),
+        signal: AbortSignal.timeout(30000),
+      }).then(r => r.json());
+
+      const tag = res.model_used ? `<span class="ai-model-tag">via ${res.model_used}${res.cached?' · cached':''}</span>` : '';
+      thinking.innerHTML = (res.answer || res.response || 'No response.') + tag;
+      btn.disabled = false;
+      msgs.scrollTop = msgs.scrollHeight;
+      return;
+    } catch(e) {
+      console.warn('AI backend failed, using local:', e.message);
+    }
+  }
+
+  // Local smart fallback
+  await new Promise(r => setTimeout(r, 700 + Math.random()*500));
+  const ans = localAIAnswer(q, order, items, SEL.orderId);
+  thinking.innerHTML = ans + '<span class="ai-model-tag">local mode · add API key for live AI</span>';
+  btn.disabled = false;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendMsg(role, html, container) {
+  const el = document.createElement('div');
+  el.className = `ai-msg ${role} fade-in`;
+  el.innerHTML = html;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  return el;
+}
+
+function buildAIContext(order, items, orderId) {
+  if (!order) return `Order ${orderId}: data unavailable`;
+  const dels  = [...new Set(items.map(i=>i.delivery_id).filter(isReal))];
+  const bils  = [...new Set(items.map(i=>i.billing_doc_id).filter(isReal))];
+  const accs  = [...new Set(items.map(i=>i.accounting_document).filter(isReal))];
+  const item0 = items[0]||{};
+  const flags = computeFlags(order, items);
+  return [
+    `ORDER: ${order.sales_order_id}`,
+    `Customer: ${order.customer_name||order.customer_id} (ID: ${order.customer_id})`,
+    `Amount: ₹${order.order_total_net_amount} | Paid: ₹${order.total_paid_amount||0} | Leakage: ₹${order.revenue_leakage_amount||0}`,
+    `Payment terms: ${order.payment_terms} (Net ${order.expected_payment_days||30}d)`,
+    `Stage: ${order.lifecycle_stage}`,
+    `Order created: ${String(order.order_created_date||'').slice(0,10)}`,
+    ``,
+    `ENTITY IDs:`,
+    `Delivery: ${dels[0]||'none'} | created: ${String(item0.delivery_created_date||'').slice(0,10)||'—'} | plant: ${item0.delivery_plant||item0.plant||'—'}`,
+    `Billing:  ${bils[0]||'none'} | date: ${String(item0.billing_date||'').slice(0,10)||'—'} | type: ${item0.billing_type||'—'} | cancelled: ${item0.is_cancelled}`,
+    `Payment:  ${accs[0]||'none'} | posting: ${String(item0.payment_posting_date||'').slice(0,10)||'—'} | clearing: ${String(item0.payment_clearing_date||'').slice(0,10)||'—'}`,
+    ``,
+    `CYCLE TIMES:`,
+    `Order→Delivery:   ${order.order_to_delivery_days||'—'}d (limit: ${FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS}d)`,
+    `Delivery→Billing: ${order.delivery_to_billing_days||'—'}d (limit: ${FLAG_THRESHOLDS.BILLING_DELAY_DAYS}d)`,
+    `Billing→Payment:  ${order.billing_to_payment_days||'—'}d (limit: ${order.expected_payment_days||30}d)`,
+    `Total O2C: ${order.total_o2c_days||'—'}d`,
+    ``,
+    `RULE-BASED FLAGS (${flags.length}):`,
+    ...(flags.length ? flags.map(f=>`  ⚠ ${f.label} | field: ${f.fk}=${f.fv}`) : ['  ✓ No flags — lifecycle clean']),
+    ``,
+    `BOOLEAN FLAGS: cancelled=${order.is_billing_cancelled} | delayed=${order.is_delivery_delayed} | unpaid=${order.is_unpaid} | overdue=${order.is_payment_overdue} | missing=${order.missing_stage}`,
+    ``,
+    `LINE ITEMS (${items.length}):`,
+    ...items.slice(0,4).map(i=>`  Item ${i.sales_order_item}: ${(i.material_desc||i.material_id||'').slice(0,30)} | ₹${i.item_net_amount} | cancelled=${i.is_cancelled||i.is_billing_cancelled}`),
+  ].join('\n');
+}
+function localAIAnswer(q, order, items, orderId) {
+  if (!order) return `Order <strong>${orderId}</strong> not found in local data.`;
+
+  const ql    = q.toLowerCase();
+  const stage = order.lifecycle_stage;
+  const isCan = stage === 'cancelled';
+  const cust  = (order.customer_name||order.customer_id||'').split(',')[0];
+  const o2d   = Number(order.order_to_delivery_days);
+  const d2b   = Number(order.delivery_to_billing_days);
+  const b2p   = Number(order.billing_to_payment_days);
+  const amt   = fmtCurrency(order.order_total_net_amount);
+  const item0 = items[0] || {};
+
+  // Run the rule engine to get flags for richer answers
+  const flags = computeFlags(order, items);
+  const flagNames = flags.map(f=>f.label.toLowerCase());
+
+  // ── Delay questions ──────────────────────────────────
+  if (ql.includes('delay') || ql.includes('late') || ql.includes('slow') || ql.includes('stuck')) {
+    if (isCan) return `Order <strong>${orderId}</strong> was <strong>cancelled</strong> — delivery delay does not apply. The billing document was reversed for <em>${cust}</em>. Rule: <code>is_billing_cancelled = True</code>.`;
+    if (stage === 'ordered') return `Order <strong>${orderId}</strong> is stuck at <strong>Ordered</strong> — no delivery document exists. Rule: <code>missing_stage = True</code>, <code>has_delivery = False</code>. Check for order holds, credit blocks, or stock unavailability at plant ${item0.plant||'—'}.`;
+    if (isReal(order.order_to_delivery_days) && o2d > FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS)
+      return `Delivery for order <strong>${orderId}</strong> took <strong>${Math.round(o2d)} days</strong> — Rule: <code>order_to_delivery_days (${Math.round(o2d)}) &gt; threshold (${FLAG_THRESHOLDS.DELIVERY_DELAY_DAYS}d)</code>. Created: ${fmtDate(order.order_created_date)}, delivered: ${fmtDate(item0.delivery_created_date)}. Plant: ${item0.delivery_plant||item0.plant||'—'}. Investigate warehouse capacity or routing.`;
+    if (isReal(order.delivery_to_billing_days) && d2b > FLAG_THRESHOLDS.BILLING_DELAY_DAYS)
+      return `Billing delay for order <strong>${orderId}</strong>: <strong>${Math.round(d2b)} days</strong> from delivery to invoice. Rule: <code>delivery_to_billing_days (${Math.round(d2b)}) &gt; ${FLAG_THRESHOLDS.BILLING_DELAY_DAYS}d</code>. Check if billing runs are scheduled or if a manual block is set.`;
+    return `No significant delay detected for order <strong>${orderId}</strong>. O→D: ${fmtDays(order.order_to_delivery_days)}, D→B: ${fmtDays(order.delivery_to_billing_days)}. Stage: <em>${stage}</em>.`;
+  }
+
+  // ── Payment questions ────────────────────────────────
+  if (ql.includes('payment') || ql.includes('paid') || ql.includes('cash') || ql.includes('invoice')) {
+    if (stage === 'paid') return `Order <strong>${orderId}</strong> (${amt}) is <strong>fully paid</strong>. Rule: <code>lifecycle_stage = paid</code>, <code>has_payment = True</code>. Payment cleared in ${fmtDays(order.billing_to_payment_days)} after billing. Acct doc: ${item0.accounting_document||'—'}.`;
+    if (flagNames.some(n=>n.includes('unpaid')))
+      return `Order <strong>${orderId}</strong> has an <strong>open invoice</strong>. Rule: <code>is_unpaid = True</code>. Billed on ${fmtDate(item0.billing_date)}, doc ${item0.billing_doc_id||'—'}. Amount due: ${amt}. Payment terms: ${order.payment_terms||'—'} (Net ${order.expected_payment_days||30}d). Escalate to AR if overdue.`;
+    if (flagNames.some(n=>n.includes('overdue')))
+      return `Payment for order <strong>${orderId}</strong> is <strong>overdue</strong>. Rule: <code>billing_to_payment_days (${Math.round(b2p)}d) &gt; expected_payment_days (${order.expected_payment_days||30}d)</code>. Send payment reminder or engage credit management.`;
+    if (isCan) return `No payment expected for order <strong>${orderId}</strong> — billing was cancelled. Rule: <code>is_billing_cancelled = True</code>. Check if a credit memo was issued for <em>${cust}</em>.`;
+    return `Order <strong>${orderId}</strong> is at <em>${stage}</em> — payment tracking begins after billing is raised. Amount: ${amt}.`;
+  }
+
+  // ── Cancellation questions ───────────────────────────
+  if (ql.includes('cancel') || ql.includes('reverse') || ql.includes('void')) {
+    if (isCan) return `Order <strong>${orderId}</strong> has a <strong>cancelled billing document</strong>. Rule: <code>is_billing_cancelled = True</code>. Billing doc ${item0.billing_doc_id||'—'} was reversed. Goods were delivered (delivery ${item0.delivery_id||'—'}) but invoice voided. Possible reasons: customer return, pricing dispute, or replacement order. <em>${cust}</em> accounts for 48 of 56 total cancellations.`;
+    return `Order <strong>${orderId}</strong> is <em>not cancelled</em>. Rule: <code>is_billing_cancelled = False</code>. Stage: <strong>${stage}</strong>.`;
+  }
+
+  // ── Why flagged question ─────────────────────────────
+  if (ql.includes('flag') || ql.includes('issue') || ql.includes('problem') || ql.includes('wrong')) {
+    if (!flags.length) return `Order <strong>${orderId}</strong> has <strong>no active flags</strong>. All lifecycle rules passed. Stage: <em>${stage}</em>, Amount: ${amt}.`;
+    const explanations = flags.map(f=>`• <strong>${f.label}</strong>: ${f.explanation.replace(/<[^>]+>/g,'')}`).join('<br/>');
+    return `Order <strong>${orderId}</strong> has <strong>${flags.length} flag${flags.length>1?'s':''}</strong>:<br/><br/>${explanations}`;
+  }
+
+  // ── Summary question ─────────────────────────────────
+  if (ql.includes('summar') || ql.includes('status') || ql.includes('overview') || ql.includes('tell me')) {
+    const flagSummary = flags.length
+      ? flags.map(f=>`<em>${f.label}</em>`).join(', ')
+      : 'none';
+    return `<strong>Order ${orderId}</strong> summary:<br/>
+• Customer: <em>${order.customer_name||order.customer_id}</em><br/>
+• Amount: ${amt} · Stage: <strong>${stage}</strong><br/>
+• O→D: ${fmtDays(order.order_to_delivery_days)} · D→B: ${fmtDays(order.delivery_to_billing_days)} · B→P: ${fmtDays(order.billing_to_payment_days)}<br/>
+• Delivery: ${item0.delivery_id||'—'} · Billing: ${item0.billing_doc_id||'—'} · Acct: ${item0.accounting_document||'—'}<br/>
+• Flags (${flags.length}): ${flagSummary}`;
+  }
+
+  // ── Default ──────────────────────────────────────────
+  return `Order <strong>${orderId}</strong> for <em>${cust}</em>: ${amt}, stage <strong>${stage}</strong>. Total O2C: ${isReal(order.total_o2c_days)?fmtDays(order.total_o2c_days):'in progress'}. Active flags: ${flags.length?flags.map(f=>f.label).join(', '):'none'}. ${flags.length?'See the Why Flagged panel for details.':''}`;
+}
+// ══════════════════════════════════════════════════════
+// ORDER AUTOCOMPLETE
+// ══════════════════════════════════════════════════════
+function suggestOrders(query) {
+  if (!dataLoaded) return;
+  const matches = ORDERS.filter(o =>
+    String(o.sales_order_id).startsWith(query) ||
+    (o.customer_name||'').toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 5);
+  // Could show a dropdown — for now just update quick-picks if on empty state
+}
+
+// ══════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════
+boot();
+</script>
+</body>
+</html>

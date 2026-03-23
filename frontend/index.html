@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>O2C Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0b0c0f; --bg-card:#111318; --bg-raised:#181b22; --bg-hover:#1e2028;
+  --border:rgba(255,255,255,.07); --border-med:rgba(255,255,255,.12);
+  --accent:#7c6dfa; --accent-2:#4af0c4; --accent-glow:rgba(124,109,250,.18);
+  --green:#22d47a; --yellow:#f5c842; --red:#f05252; --blue:#38b6ff; --orange:#ff8c42;
+  --text:#e8eaf0; --text-2:#8b8fa8; --text-3:#4a4d60;
+  --stage-ordered:#38b6ff; --stage-delivered:#a78bfa; --stage-billed:#f5c842;
+  --stage-paid:#22d47a; --stage-cancelled:#f05252;
+  --font-d:"Syne",sans-serif; --font-b:"Inter",sans-serif; --font-m:"IBM Plex Mono",monospace;
+  --sidebar:228px; --topbar:58px; --r:12px; --rl:18px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:99px}
+
+#app{display:flex;height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{width:var(--sidebar);height:100vh;background:var(--bg-card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:relative;z-index:10}
+.sidebar::after{content:"";position:absolute;top:0;right:-1px;bottom:0;width:1px;background:linear-gradient(180deg,transparent,var(--accent) 40%,var(--accent-2) 70%,transparent);opacity:.3}
+.logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
+.logo-mark{font-family:var(--font-d);font-weight:800;font-size:18px;letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo-sub{font-size:10px;color:var(--text-3);font-family:var(--font-m);letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.nav{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.nav-sec{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);padding:12px 10px 5px;font-family:var(--font-m)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;transition:background .12s,color .12s;user-select:none;position:relative}
+.nav-item:hover{background:var(--bg-raised);color:var(--text)}
+.nav-item.active{background:var(--accent-glow);color:var(--accent)}
+.nav-item.active::before{content:"";position:absolute;left:0;top:20%;bottom:20%;width:2px;border-radius:2px;background:var(--accent)}
+.ni{width:16px;height:16px;opacity:.8;flex-shrink:0}
+.nav-badge{margin-left:auto;background:rgba(240,82,82,.2);color:var(--red);font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;font-family:var(--font-m)}
+.sidebar-ft{padding:14px 16px;border-top:1px solid var(--border)}
+.sidebar-ft-t{font-size:10px;color:var(--text-3);font-family:var(--font-m);line-height:1.8}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:var(--topbar);background:var(--bg-card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;flex-shrink:0}
+.topbar-l{display:flex;align-items:center;gap:14px}
+.page-title{font-family:var(--font-d);font-weight:700;font-size:17px;letter-spacing:-.01em}
+.page-pill{font-size:10px;font-family:var(--font-m);background:var(--bg-raised);border:1px solid var(--border-med);border-radius:99px;padding:2px 10px;color:var(--text-2)}
+.topbar-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border-med)}
+.btn-ghost:hover{background:var(--bg-raised);color:var(--text)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:#6a5cf5}
+
+#page-body{flex:1;overflow-y:auto;padding:24px 28px 40px}
+
+/* ── Cards ── */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 22px}
+.card-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;font-family:var(--font-m)}
+
+/* ── KPI grid ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;cursor:default}
+.kpi-card:hover{border-color:var(--border-med);transform:translateY(-1px)}
+.kpi-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--ka,var(--accent))}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);font-family:var(--font-m);margin-bottom:8px}
+.kpi-value{font-family:var(--font-d);font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1;margin-bottom:5px}
+.kpi-sub{font-size:11px;color:var(--text-2)}
+.kpi-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;font-family:var(--font-m);padding:2px 7px;border-radius:99px;margin-top:6px}
+.kb-bad{background:rgba(240,82,82,.15);color:var(--red)}
+.kb-warn{background:rgba(245,200,66,.15);color:var(--yellow)}
+.kb-good{background:rgba(34,212,122,.15);color:var(--green)}
+.kb-info{background:rgba(56,182,255,.15);color:var(--blue)}
+.kpi-glyph{position:absolute;bottom:14px;right:16px;font-size:28px;opacity:.06}
+
+/* ── Charts row ── */
+.charts-row{display:grid;grid-template-columns:320px 1fr;gap:12px;margin-bottom:20px}
+.bottom-row{display:grid;grid-template-columns:1fr 370px;gap:12px}
+
+/* ── Table ── */
+.dt{width:100%;border-collapse:collapse}
+.dt thead th{padding:9px 12px;font-size:10px;font-weight:700;font-family:var(--font-m);color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;text-align:left;border-bottom:1px solid var(--border)}
+.dt tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+.dt tbody tr:hover{background:var(--bg-raised)}
+.dt td{padding:10px 12px;font-size:12px}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--font-m);letter-spacing:.03em}
+.b-ordered{background:rgba(56,182,255,.12);color:var(--stage-ordered)}
+.b-delivered{background:rgba(167,139,250,.12);color:var(--stage-delivered)}
+.b-billed{background:rgba(245,200,66,.12);color:var(--stage-billed)}
+.b-paid{background:rgba(34,212,122,.12);color:var(--stage-paid)}
+.b-cancelled{background:rgba(240,82,82,.12);color:var(--stage-cancelled)}
+.b-warn{background:rgba(245,200,66,.12);color:var(--yellow)}
+.b-danger{background:rgba(240,82,82,.12);color:var(--red)}
+.b-info{background:rgba(56,182,255,.12);color:var(--blue)}
+
+/* ── Risk meter ── */
+.risk-meter{display:flex;gap:2px}
+.rp{width:6px;height:6px;border-radius:2px;background:var(--bg-raised)}
+.rp.r1{background:var(--blue)} .rp.r2{background:var(--yellow)} .rp.r3{background:var(--orange)} .rp.r4{background:var(--red)} .rp.r5{background:#c0392b}
+
+/* ── Issue list ── */
+.issue-list{display:flex;flex-direction:column;gap:0}
+.issue-row{display:flex;align-items:flex-start;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);gap:12px}
+.issue-row:last-child{border-bottom:none}
+.issue-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.issue-meta{font-size:10px;color:var(--text-2);font-family:var(--font-m)}
+
+/* ── Drawer ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;right:-540px;top:0;bottom:0;width:500px;background:var(--bg-card);border-left:1px solid var(--border);z-index:201;transition:right .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.drawer.open{right:0}
+.drawer-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between}
+.drawer-body{flex:1;overflow-y:auto;padding:22px 24px}
+.drawer-sec{margin-bottom:22px}
+.drawer-sec-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);font-family:var(--font-m);margin-bottom:10px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meta-item{background:var(--bg-raised);border-radius:8px;padding:10px 13px}
+.mi-label{font-size:9px;color:var(--text-3);font-family:var(--font-m);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.mi-val{font-size:15px;font-weight:700;font-family:var(--font-d)}
+
+/* ── Stage track ── */
+.stage-track{display:flex;align-items:center;gap:0;margin:16px 0}
+.s-node{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0}
+.s-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border-med);background:var(--bg-raised);display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .2s}
+.s-dot.done{border-color:var(--green);background:rgba(34,212,122,.1)}
+.s-dot.active{border-color:var(--accent);background:var(--accent-glow)}
+.s-dot.error{border-color:var(--red);background:rgba(240,82,82,.1)}
+.s-name{font-size:9px;color:var(--text-3);font-family:var(--font-m);text-transform:uppercase;letter-spacing:.05em}
+.s-line{flex:1;height:1px;background:var(--border-med)}
+.s-line.done{background:var(--green)}
+
+/* ── Filters ── */
+.filters{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.f-select{background:var(--bg-card);border:1px solid var(--border-med);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--font-b);padding:6px 12px;outline:none;cursor:pointer}
+.f-select:focus{border-color:var(--accent)}
+.f-label{font-size:11px;color:var(--text-2);font-family:var(--font-m)}
+
+/* ── Issues ── */
+.issues-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+
+/* ── Customers ── */
+.cust-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cust-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.cust-card:hover{border-color:var(--border-med);transform:translateY(-2px)}
+.cust-acc{position:absolute;top:0;left:0;right:0;height:2px}
+.cust-name{font-family:var(--font-d);font-size:14px;font-weight:700;margin-bottom:2px}
+.cust-id{font-size:10px;color:var(--text-3);font-family:var(--font-m);margin-bottom:14px}
+.cust-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.cs-label{font-size:9px;color:var(--text-3);font-family:var(--font-m);text-transform:uppercase;letter-spacing:.08em}
+.cs-val{font-size:14px;font-weight:700;font-family:var(--font-d)}
+.cust-badges{display:flex;gap:5px;flex-wrap:wrap}
+
+/* ── AI ── */
+.ai-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;height:calc(100vh - var(--topbar) - 48px)}
+.chat-wrap{display:flex;flex-direction:column;height:100%}
+.chat-messages{flex:1;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl) var(--rl) 0 0;padding:20px;display:flex;flex-direction:column;gap:12px}
+.chat-bubble{max-width:82%;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6}
+.bu{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.ba{background:var(--bg-raised);color:var(--text);align-self:flex-start;border-bottom-left-radius:3px}
+.ba strong{color:var(--accent-2)}
+.chat-input-row{display:flex;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--rl) var(--rl);padding:12px 14px}
+.chat-input{flex:1;background:var(--bg-raised);border:1px solid var(--border-med);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--font-b);padding:8px 14px;outline:none}
+.chat-input:focus{border-color:var(--accent)}
+.sug-chip{background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text-2);cursor:pointer;transition:all .15s;text-align:left;width:100%}
+.sug-chip:hover{border-color:var(--accent);color:var(--text);background:var(--accent-glow)}
+
+/* ── Relationship view ── */
+.rv-shell{display:grid;grid-template-columns:1fr 340px;gap:0;height:calc(100vh - var(--topbar) - 48px);overflow:hidden}
+.rv-canvas{background:var(--bg);position:relative;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 24px}
+.rv-canvas::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:36px 36px;pointer-events:none}
+.rv-panel{background:var(--bg-card);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.rv-topbar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.rv-search{flex:1;display:flex;align-items:center;gap:8px;background:var(--bg-raised);border:1px solid var(--border-med);border-radius:8px;padding:0 12px;height:34px}
+.rv-search input{background:none;border:none;outline:none;color:var(--text);font-family:var(--font-m);font-size:12px;width:100%}
+.rv-search input::placeholder{color:var(--text-3)}
+
+/* flow diagram */
+.rv-flow{display:flex;flex-direction:column;align-items:center;gap:0;min-width:520px;position:relative;z-index:1}
+.rv-stage-row{display:flex;align-items:center;gap:0}
+.rv-node{display:flex;flex-direction:column;align-items:center;cursor:pointer;outline:none}
+.rv-node-body{width:138px;background:var(--bg-card);border:1.5px solid var(--border-med);border-radius:14px;padding:13px 14px;transition:all .18s;position:relative;overflow:hidden}
+.rv-node-body::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--rnc,transparent)}
+.rv-node:hover .rv-node-body,.rv-node.rv-active .rv-node-body{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.5);border-color:var(--rnc,var(--border-med))}
+.rv-node.rv-active .rv-node-body{background:var(--bg-raised)}
+.rv-node-icon{font-size:17px;margin-bottom:5px;line-height:1}
+.rv-node-type{font-size:9px;font-family:var(--font-m);letter-spacing:.1em;text-transform:uppercase;color:var(--rnc,var(--text-3));margin-bottom:3px}
+.rv-node-id{font-family:var(--font-m);font-size:11px;font-weight:500;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-node-sub{font-size:10px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-h-conn{display:flex;align-items:center;padding:0 6px}
+.rv-h-line{height:1.5px;width:36px;background:var(--border-med)}
+.rv-h-arrow{width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid var(--border-med)}
+.rv-cycle-bar{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap;justify-content:center}
+.rv-cycle-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:5px 11px;text-align:center;min-width:60px}
+.rv-items-label{font-size:9px;font-family:var(--font-m);color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-top:22px;margin-bottom:8px;align-self:flex-start}
+.rv-items-scroll{display:flex;gap:0;overflow-x:auto;max-width:100%;padding-bottom:4px}
+.rv-item-chip{flex-shrink:0;width:110px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;transition:border-color .12s;margin-right:1px}
+.rv-item-chip:hover{border-color:var(--border-med)}
+.rv-item-chip.rv-active{border-color:var(--accent)}
+.rv-item-type{font-size:8px;font-family:var(--font-m);color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.rv-item-id{font-family:var(--font-m);font-size:10px;font-weight:500;color:var(--text)}
+.rv-item-desc{font-size:10px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.rv-flags{display:flex;gap:5px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.rv-flag{font-size:10px;font-family:var(--font-m);padding:3px 9px;border-radius:99px}
+
+/* detail panel inside rv */
+.rv-ptabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.rv-ptab{flex:1;padding:11px 0;font-size:10px;font-weight:600;font-family:var(--font-m);text-transform:uppercase;letter-spacing:.08em;text-align:center;color:var(--text-3);cursor:pointer;transition:color .12s;border-bottom:2px solid transparent;margin-bottom:-1px}
+.rv-ptab.rv-ptab-active{color:var(--accent);border-bottom-color:var(--accent)}
+.rv-pbody{flex:1;overflow-y:auto;padding:16px}
+.rv-detail-type{font-size:9px;font-family:var(--font-m);text-transform:uppercase;letter-spacing:.12em;color:var(--text-3);margin-bottom:3px}
+.rv-detail-id{font-size:19px;font-weight:700;font-family:var(--font-d);margin-bottom:6px}
+.rv-fields{display:flex;flex-direction:column;gap:0;margin-top:14px}
+.rv-field{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);gap:10px}
+.rv-field:last-child{border-bottom:none}
+.rv-fkey{font-size:10px;color:var(--text-3);font-family:var(--font-m);white-space:nowrap;flex-shrink:0}
+.rv-fval{font-size:11px;color:var(--text);font-family:var(--font-m);text-align:right;word-break:break-all}
+.rv-fval.good{color:var(--green)} .rv-fval.warn{color:var(--yellow)} .rv-fval.bad{color:var(--red)}
+.rv-timeline{background:var(--bg-raised);border-radius:8px;border:1px solid var(--border);padding:12px;margin:12px 0}
+.rv-tl-title{font-size:9px;font-family:var(--font-m);text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-bottom:10px}
+.rv-tl-step{display:flex;align-items:flex-start;gap:8px;padding-bottom:10px;position:relative}
+.rv-tl-step:last-child{padding-bottom:0}
+.rv-tl-step::after{content:"";position:absolute;left:5px;top:13px;bottom:0;width:1px;background:var(--border-med)}
+.rv-tl-step:last-child::after{display:none}
+.rv-tl-dot{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--text-3);background:var(--bg-raised);flex-shrink:0;margin-top:2px;z-index:1}
+.rv-tl-dot.done{border-color:var(--green);background:rgba(34,212,122,.12)}
+.rv-tl-dot.active{border-color:var(--accent);background:var(--accent-glow)}
+.rv-tl-dot.err{border-color:var(--red);background:rgba(240,82,82,.12)}
+.rv-tl-stage{font-size:12px;font-weight:500;color:var(--text)}
+.rv-tl-date{font-size:10px;font-family:var(--font-m);color:var(--text-3);margin-top:1px}
+.rv-tl-days{font-size:9px;font-family:var(--font-m);background:var(--bg);color:var(--text-2);padding:1px 5px;border-radius:3px;margin-top:2px;display:inline-block}
+
+/* rv ai chat */
+.rv-ai-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:14px}
+.rv-bubble{padding:9px 12px;border-radius:8px;font-size:12px;line-height:1.6}
+.rv-bubble.u{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:2px;max-width:85%}
+.rv-bubble.a{background:var(--bg-raised);border:1px solid var(--border-med);color:var(--text);border-bottom-left-radius:2px}
+.rv-bubble.a strong{color:var(--accent-2)}
+.rv-ai-input{display:flex;gap:6px;padding:12px;border-top:1px solid var(--border);flex-shrink:0}
+.rv-ai-inp{flex:1;background:var(--bg-raised);border:1px solid var(--border-med);border-radius:8px;color:var(--text);font-family:var(--font-b);font-size:12px;padding:7px 11px;outline:none}
+.rv-ai-inp:focus{border-color:var(--accent)}
+.rv-sugs{display:flex;flex-direction:column;gap:4px;padding:0 14px 10px}
+.rv-sug{background:var(--bg-raised);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--text-2);cursor:pointer;transition:all .12s;text-align:left;font-family:var(--font-m)}
+.rv-sug:hover{border-color:var(--accent);color:var(--text);background:var(--accent-glow)}
+.rv-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px 20px;color:var(--text-3);text-align:center;position:relative;z-index:1}
+.rv-empty-glyph{font-size:36px;opacity:.25}
+.rv-quick-picks{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
+.rv-pill{font-family:var(--font-m);font-size:11px;padding:4px 11px;background:var(--bg-raised);border:1px solid var(--border-med);border-radius:99px;cursor:pointer;color:var(--text-2);transition:all .12s}
+.rv-pill:hover{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}
+
+/* ── Spinner / Loading ── */
+.spinner{width:18px;height:18px;border:2px solid var(--border-med);border-top-color:var(--accent);border-radius:50%;animation:spin .65s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-screen{display:flex;align-items:center;justify-content:center;height:200px;gap:12px;color:var(--text-2);font-size:13px}
+
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .3s ease forwards}
+.fu1{animation-delay:.05s;opacity:0} .fu2{animation-delay:.1s;opacity:0} .fu3{animation-delay:.15s;opacity:0}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon">⚡</div>O2C Intel
+      </div>
+      <div class="logo-sub">SAP · ABCD · INR</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-sec">Analytics</div>
+      <div class="nav-item active" data-page="dashboard">
+        <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-page="lifecycle">
+        <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Lifecycle
+      </div>
+      <div class="nav-item" data-page="issues">
+        <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Issues
+        <span class="nav-badge" id="nav-badge">—</span>
+      </div>
+      <div class="nav-item" data-page="customers">
+        <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Customers
+      </div>
+      <div class="nav-sec">Intelligence</div>
+      <div class="nav-item" data-page="ai">
+        <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        AI Insights
+      </div>
+      <div class="nav-item" data-page="relationships">
+        <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 11.5l8-4M8 12.5l8 4"/></svg>
+        Relationship View
+      </div>
+    </nav>
+    <div class="sidebar-ft">
+      <div class="sidebar-ft-t">Pipeline run<br/>Mar 31 – May 16 2025<br/>100 orders · 8 customers</div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-l">
+        <div class="page-title" id="pt">Dashboard</div>
+        <div class="page-pill" id="pp">Overview</div>
+      </div>
+      <div class="topbar-r">
+        <button class="btn btn-ghost" onclick="boot()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-accent" onclick="go('ai')">✦ Ask AI</button>
+      </div>
+    </header>
+    <div id="page-body"><div class="loading-screen"><div class="spinner"></div> Loading O2C data…</div></div>
+  </div>
+</div>
+
+<!-- Drawer -->
+<div class="drawer-overlay" id="dov" onclick="closeDrawer()"></div>
+<div class="drawer" id="drw">
+  <div class="drawer-head" id="dh"></div>
+  <div class="drawer-body" id="db"></div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────
+const API_BASE = 'http://localhost:8000';
+const D = { kpis:null, customers:null, orders:null, backendOnline:false };
+
+// ── API helpers ─────────────────────────────────────────
+async function apiGet(path, params={}) {
+  const qs = new URLSearchParams(params).toString();
+  const url = `${API_BASE}${path}${qs?'?'+qs:''}`;
+  const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
+  if (!r.ok) throw new Error(`API ${r.status}: ${path}`);
+  return r.json();
+}
+
+async function apiPost(path, body={}) {
+  const r = await fetch(`${API_BASE}${path}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body), signal:AbortSignal.timeout(30000)
+  });
+  if (!r.ok) throw new Error(`API ${r.status}: ${path}`);
+  return r.json();
+}
+
+// ── Data loading — API first, static fallback ───────────
+async function loadData() {
+  // Try live backend first
+  try {
+    const health = await apiGet('/health');
+    if (health.status === 'ok') {
+      D.backendOnline = true;
+      const [k, c, ordersRes] = await Promise.all([
+        apiGet('/api/kpis/summary'),
+        apiGet('/api/kpis/customers'),
+        apiGet('/api/orders', {limit:500}),
+      ]);
+      D.kpis = k; D.customers = c;
+      D.orders = ordersRes.data;
+      const badge = document.getElementById('nav-badge');
+      if (badge) badge.textContent = D.orders.filter(o => Number(o.max_issue_severity)>0).length;
+      console.log('✓ Loaded from live API');
+      return;
+    }
+  } catch(e) {
+    console.warn('Backend offline, falling back to static files:', e.message);
+  }
+
+  // Static file fallback
+const bases = ['../../backend/data/processed/'];
+  for (const base of bases) {
+    try {
+      const [k, c, o] = await Promise.all([
+        fetch(base+'kpi_summary.json').then(r => { if(!r.ok) throw 0; return r.json(); }),
+        fetch(base+'customer_kpis.json').then(r => { if(!r.ok) throw 0; return r.json(); }),
+        fetch(base+'unified_o2c_orders.csv').then(r => { if(!r.ok) throw 0; return r.text(); }),
+      ]);
+      D.kpis = k; D.customers = c; D.orders = parseCSV(o);
+      const badge = document.getElementById('nav-badge');
+      if (badge) badge.textContent = D.orders.filter(o => Number(o.max_issue_severity)>0).length;
+      console.log('✓ Loaded from static files');
+      return;
+    } catch(e) { continue; }
+  }
+  throw new Error('Could not load data — start a local HTTP server from the project root');
+}
+
+// ── Backend health check ────────────────────────────────
+async function checkBackend() {
+  const el = document.getElementById('backend-status');
+  const card = document.getElementById('backend-status-card');
+  if (!el) return;
+  try {
+    const h = await apiGet('/health');
+    D.backendOnline = true;
+    el.innerHTML = `
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+      <span style="color:var(--green);font-weight:600">Live</span>
+      <span style="color:var(--text-3)">— ${h.orders} orders loaded · AI ready</span>`;
+    if (card) card.style.borderColor = 'rgba(34,212,122,.25)';
+  } catch(e) {
+    el.innerHTML = `
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--text-3);flex-shrink:0"></div>
+      <span style="color:var(--text-3)">Offline — using static data</span>
+      <code style="font-family:var(--font-m);font-size:10px;color:var(--accent-2);margin-left:auto">uvicorn main:app --reload</code>`;
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line => {
+    const vals=[]; let cur='', inQ=false;
+    for (const ch of line) {
+      if (ch==='"') { inQ=!inQ; }
+      else if (ch===',' && !inQ) { vals.push(cur.trim()); cur=''; }
+      else { cur+=ch; }
+    }
+    vals.push(cur.trim());
+    return Object.fromEntries(headers.map((h,i)=>[h, vals[i]??'']));
+  });
+}
+
+// ── Router ──────────────────────────────────────────────
+const META = {
+  dashboard:{title:'Dashboard',pill:'Overview'},
+  lifecycle:{title:'Lifecycle',pill:'Order Tracker'},
+  issues:{title:'Issues',pill:'Issue Monitor'},
+  customers:{title:'Customers',pill:'Customer Profiles'},
+  ai:{title:'AI Insights',pill:'NL Intelligence'},
+  relationships:{title:'Relationship View',pill:'Entity Explorer'},
+};
+const PAGES = { dashboard:pageDashboard, lifecycle:pageLifecycle, issues:pageIssues, customers:pageCustomers, ai:pageAI, relationships:pageRelationships };
+
+async function go(page) {
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.page===page));
+  const m=META[page]||META.dashboard;
+  document.getElementById('pt').textContent=m.title;
+  document.getElementById('pp').textContent=m.pill;
+  const body=document.getElementById('page-body');
+  body.innerHTML='<div class="loading-screen"><div class="spinner"></div></div>';
+  await PAGES[page](body);
+}
+document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>go(el.dataset.page)));
+
+// ── Formatters ─────────────────────────────────────────
+const f = {
+  currency: v => (!v&&v!==0)||isNaN(Number(v)) ? '—' : '₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:0}),
+  days: v => (!v&&v!==0)||isNaN(Number(v))||v==='' ? '—' : Math.round(Number(v))+'d',
+  pct: v => v==null ? '—' : Number(v).toFixed(1)+'%',
+  date: v => v ? v.slice(0,10) : '—',
+};
+
+function sbadge(s) {
+  const m={ordered:'b-ordered',delivered:'b-delivered',billed:'b-billed',paid:'b-paid',cancelled:'b-cancelled'};
+  return `<span class="badge ${m[s]||''}">${s}</span>`;
+}
+
+function riskMeter(score, max=5) {
+  const s=Math.min(Math.ceil(score/10),max);
+  return '<div class="risk-meter">'+Array.from({length:max},(_,i)=>`<div class="rp ${i<s?'r'+(i+1):''}"></div>`).join('')+'</div>';
+}
+
+function chartDefaults() {
+  return {
+    tooltip:{backgroundColor:'#1e2028',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#e8eaf0',bodyColor:'#8b8fa8',padding:10},
+    legend:{labels:{color:'#8b8fa8',font:{size:11},boxWidth:10,boxHeight:10}},
+  };
+}
+
+// ── Dashboard ───────────────────────────────────────────
+async function pageDashboard(c) {
+  const {kpis:K, customers:C} = D;
+  const o=K.overview, iss=K.issues, cy=K.cycle_times;
+
+  c.innerHTML = `
+  <div class="kpi-grid fu fu1">
+    ${kpiCard('Total Revenue',      f.currency(o.total_revenue_inr),  f.pct(o.payment_coverage_pct)+' collected',    'kb-info',  'var(--accent)',   '₹')}
+    ${kpiCard('Cancellation Rate',  f.pct(iss.cancellation_rate_pct), iss.orders_billing_cancelled+' orders',        'kb-bad',   'var(--red)',      '✕')}
+    ${kpiCard('Avg O2C Cycle',      f.days(cy.avg_total_o2c_days),    'Median '+f.days(cy.median_total_o2c_days),   'kb-warn',  'var(--yellow)',   '⏱')}
+    ${kpiCard('Revenue Leakage',    f.currency(o.revenue_leakage_inr),f.pct(100-o.payment_coverage_pct)+' uncollected','kb-warn','var(--orange)', '⚠')}
+    ${kpiCard('Unpaid Orders',      iss.orders_unpaid,                'Billed, awaiting payment',                   'kb-info',  'var(--blue)',     '🧾')}
+    ${kpiCard('Delivery Delays',    iss.orders_with_delivery_delay,   f.pct(iss.delivery_delay_rate_pct)+' of orders','kb-warn', 'var(--yellow)',  '🚚')}
+    ${kpiCard('Billing Coverage',   f.pct(o.billing_coverage_pct),    'Of total order value',                       'kb-good',  'var(--green)',    '✓')}
+    ${kpiCard('Missing Stages',     iss.orders_missing_stage,         'No complete lifecycle record',               'kb-bad',   'var(--stage-cancelled)','?')}
+  </div>
+
+  <div class="charts-row fu fu2">
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="card-label">Lifecycle distribution</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center">
+        <canvas id="c-donut" style="max-width:190px;max-height:190px"></canvas>
+      </div>
+      <div id="donut-leg" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Revenue funnel — ordered vs paid per customer</div>
+      <canvas id="c-rev" style="max-height:230px"></canvas>
+    </div>
+  </div>
+
+  <div class="bottom-row fu fu3">
+    <div class="card">
+      <div class="card-label">Customer risk ranking</div>
+      <table class="dt">
+        <thead><tr>
+          <th>Customer</th><th>Revenue</th><th>Cancelled</th>
+          <th>Unpaid</th><th>Avg O2C</th><th>Risk</th>
+        </tr></thead>
+        <tbody id="risk-tb"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-label">Cycle time breakdown (avg days)</div>
+      <canvas id="c-cy" style="max-height:160px"></canvas>
+      <div style="margin-top:20px">
+        <div class="card-label">Top issues</div>
+        <div class="issue-list" id="iss-list"></div>
+      </div>
+    </div>
+  </div>`;
+
+  // Donut
+  const stages=K.lifecycle_stages;
+  const sc={cancelled:'#f05252',billed:'#f5c842',ordered:'#38b6ff',paid:'#22d47a',delivered:'#a78bfa'};
+  new Chart(document.getElementById('c-donut').getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:Object.keys(stages),
+      datasets:[{data:Object.values(stages),backgroundColor:Object.keys(stages).map(k=>sc[k]+'bb'),borderColor:Object.keys(stages).map(k=>sc[k]),borderWidth:1.5,hoverOffset:5}]
+    },
+    options:{cutout:'68%',plugins:{legend:{display:false},tooltip:{...chartDefaults().tooltip,callbacks:{label:ctx=>`  ${ctx.label}: ${ctx.parsed}`}}}}
+  });
+  const leg=document.getElementById('donut-leg');
+  Object.entries(stages).forEach(([k,v])=>{
+    leg.innerHTML+=`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2)"><div style="width:8px;height:8px;border-radius:50%;background:${sc[k]}"></div>${k} <span style="color:var(--text-3)">(${v})</span></div>`;
+  });
+
+  // Revenue bar
+  const top=C.slice(0,6);
+  new Chart(document.getElementById('c-rev').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:top.map(c=>c.customer_name.split(',')[0].split(' ')[0]),
+      datasets:[
+        {label:'Ordered',data:top.map(c=>c.total_revenue_inr),backgroundColor:'#7c6dfa55',borderColor:'#7c6dfa',borderWidth:1.5,borderRadius:4},
+        {label:'Paid',   data:top.map(c=>c.total_paid_inr),   backgroundColor:'#22d47a55',borderColor:'#22d47a',borderWidth:1.5,borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{...chartDefaults(),tooltip:{...chartDefaults().tooltip,callbacks:{label:ctx=>`  ${ctx.dataset.label}: ₹${Number(ctx.parsed.y).toLocaleString('en-IN',{maximumFractionDigits:0})}`}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8fa8',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8fa8',font:{size:10},callback:v=>'₹'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}
+      }
+    }
+  });
+
+  // Cycle time
+  new Chart(document.getElementById('c-cy').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:['Order→Del','Del→Bill','Bill→Pay'],
+      datasets:[{data:[cy.avg_order_to_delivery_days,cy.avg_delivery_to_billing_days,cy.avg_billing_to_payment_days],backgroundColor:['#38b6ff55','#a78bfa55','#22d47a55'],borderColor:['#38b6ff','#a78bfa','#22d47a'],borderWidth:1.5,borderRadius:6}]
+    },
+    options:{
+      indexAxis:'y',responsive:true,
+      plugins:{legend:{display:false},tooltip:{...chartDefaults().tooltip}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8fa8',font:{size:10},callback:v=>v+'d'}},
+        y:{grid:{display:false},ticks:{color:'#8b8fa8',font:{size:11}}}
+      }
+    }
+  });
+
+  // Risk table
+  const tb=document.getElementById('risk-tb');
+  C.forEach(c=>{
+    tb.innerHTML+=`<tr onclick="go('customers')">
+      <td><div style="font-weight:600;font-size:12px">${c.customer_name}</div><div style="font-size:10px;color:var(--text-3);font-family:var(--font-m)">${c.customer_id}</div></td>
+      <td style="font-family:var(--font-m);font-size:11px">${f.currency(c.total_revenue_inr)}</td>
+      <td><span style="color:${c.cancelled_orders>0?'var(--red)':'var(--text-3)'};font-weight:600">${c.cancelled_orders}</span></td>
+      <td><span style="color:${c.unpaid_orders>0?'var(--yellow)':'var(--text-3)'};font-weight:600">${c.unpaid_orders}</span></td>
+      <td style="font-family:var(--font-m);font-size:11px">${f.days(c.avg_o2c_days)}</td>
+      <td>${riskMeter(c.risk_score)}</td>
+    </tr>`;
+  });
+
+  // Issues list
+  const il=document.getElementById('iss-list');
+  [{icon:'✕',color:'var(--red)',    title:`${iss.orders_billing_cancelled} Billing cancellations`, sub:`${f.pct(iss.cancellation_rate_pct)} of all orders`},
+   {icon:'🧾',color:'var(--yellow)',title:`${iss.orders_unpaid} Unpaid invoices`,                  sub:'Billed but not yet cleared'},
+   {icon:'?', color:'var(--blue)',  title:`${iss.orders_missing_stage} Incomplete lifecycles`,     sub:'Missing delivery or billing stage'},
+   {icon:'🚚',color:'var(--orange)',title:`${iss.orders_with_delivery_delay} Delivery delays`,     sub:`Exceeded 3-day threshold`},
+  ].forEach(item=>{
+    il.innerHTML+=`<div class="issue-row">
+      <div><div class="issue-title">${item.title}</div><div class="issue-meta">${item.sub}</div></div>
+      <div style="font-size:20px;opacity:.6">${item.icon}</div>
+    </div>`;
+  });
+}
+
+function kpiCard(label,value,sub,badgeClass,accent,glyph) {
+  return `<div class="kpi-card" style="--ka:${accent}">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value">${value}</div>
+    <div class="kpi-sub">${sub}</div>
+    <div class="kpi-badge ${badgeClass}">${badgeClass.includes('bad')?'Flag':badgeClass.includes('warn')?'Monitor':badgeClass.includes('good')?'Healthy':'Active'}</div>
+    <div class="kpi-glyph">${glyph}</div>
+  </div>`;
+}
+
+// ── Lifecycle ───────────────────────────────────────────
+async function pageLifecycle(c) {
+  const orders=D.orders;
+  const stages=[...new Set(orders.map(o=>o.lifecycle_stage))].sort();
+  const custs=[...new Set(orders.map(o=>o.customer_id))];
+  const cm=Object.fromEntries(D.customers.map(c=>[c.customer_id,c.customer_name]));
+
+  c.innerHTML=`
+  <div class="filters fu">
+    <span class="f-label">Stage</span>
+    <select class="f-select" id="fs"><option value="">All stages</option>${stages.map(s=>`<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}</select>
+    <span class="f-label" style="margin-left:6px">Customer</span>
+    <select class="f-select" id="fc"><option value="">All customers</option>${custs.map(c=>`<option value="${c}">${cm[c]?.split(',')[0]?.split(' ')[0]??c}</option>`).join('')}</select>
+    <span class="f-label" style="margin-left:6px">Show</span>
+    <select class="f-select" id="fi"><option value="">All orders</option><option value="1">With issues only</option></select>
+    <span id="fcount" style="margin-left:auto;font-size:11px;color:var(--text-3);font-family:var(--font-m)"></span>
+  </div>
+  <div class="card fu fu2">
+    <table class="dt">
+      <thead><tr>
+        <th>Order ID</th><th>Customer</th><th>Items</th><th>Revenue</th>
+        <th>Stage</th><th>O→D</th><th>D→B</th><th>B→P</th><th>Total</th><th>Issues</th>
+      </tr></thead>
+      <tbody id="o-tb"></tbody>
+    </table>
+  </div>`;
+
+  async function render() {
+    const sv=document.getElementById('fs').value, cv=document.getElementById('fc').value, iv=document.getElementById('fi').value;
+    let fl;
+    if (D.backendOnline) {
+      try {
+        const params = {};
+        if (sv) params.stage = sv;
+        if (cv) params.customer = cv;
+        if (iv) params.issue_type = 'cancelled';  // any issue
+        const res = await apiGet('/api/orders', {...params, limit:500});
+        fl = res.data;
+      } catch(e) {
+        fl = orders.filter(o=>{
+          if(sv&&o.lifecycle_stage!==sv)return false;
+          if(cv&&o.customer_id!==cv)return false;
+          if(iv&&Number(o.max_issue_severity)<1)return false;
+          return true;
+        });
+      }
+    } else {
+      fl = orders.filter(o=>{
+        if(sv&&o.lifecycle_stage!==sv)return false;
+        if(cv&&o.customer_id!==cv)return false;
+        if(iv&&Number(o.max_issue_severity)<1)return false;
+        return true;
+      });
+    }
+    document.getElementById('fcount').textContent=fl.length+' orders';
+    const tb=document.getElementById('o-tb'); if(!tb)return;
+    tb.innerHTML=fl.map(o=>{
+      const isv=Number(o.max_issue_severity);
+      return `<tr onclick='openDrawer(${JSON.stringify(o).replace(/'/g,"&#39;")})'>
+        <td style="font-family:var(--font-m);font-size:11px;color:var(--text-2)">${o.sales_order_id}</td>
+        <td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.customer_name||o.customer_id}</td>
+        <td style="text-align:center">${o.total_items}</td>
+        <td style="font-family:var(--font-m);font-size:11px">${f.currency(o.order_total_net_amount)}</td>
+        <td>${sbadge(o.lifecycle_stage)}</td>
+        <td style="font-family:var(--font-m);font-size:11px;color:var(--text-2)">${f.days(o.order_to_delivery_days)}</td>
+        <td style="font-family:var(--font-m);font-size:11px;color:var(--text-2)">${f.days(o.delivery_to_billing_days)}</td>
+        <td style="font-family:var(--font-m);font-size:11px;color:var(--text-2)">${f.days(o.billing_to_payment_days)}</td>
+        <td style="font-family:var(--font-m);font-size:11px;font-weight:600;color:${Number(o.total_o2c_days)>10?'var(--yellow)':'var(--text)'}">${f.days(o.total_o2c_days)}</td>
+        <td>${isv>0?`<span style="font-size:10px;font-weight:700;color:var(--red);font-family:var(--font-m)">${isv} flag${isv>1?'s':''}</span>`:'<span style="color:var(--text-3)">—</span>'}</td>
+      </tr>`;
+    }).join('');
+  }
+  ['fs','fc','fi'].forEach(id=>document.getElementById(id)?.addEventListener('change',render));
+  render();
+}
+
+// ── Issues ──────────────────────────────────────────────
+async function pageIssues(c) {
+  const { orders: O, kpis: K } = D;
+  const iss = K.issues;
+
+  // ✅ Helper to normalize boolean values
+  function isTrue(v) {
+    return String(v).toLowerCase() === 'true';
+  }
+
+  // ✅ Filter flagged orders correctly
+  const flagged = O.filter(o =>
+    isTrue(o.is_billing_cancelled) ||
+    isTrue(o.is_delivery_delayed) ||
+    isTrue(o.is_unpaid) ||
+    isTrue(o.missing_stage)
+  );
+
+  c.innerHTML = `
+  <div class="issues-summary fu">
+    ${[
+      ['Cancellations', iss.orders_billing_cancelled, 'var(--red)', '✕'],
+      ['Unpaid', iss.orders_unpaid, 'var(--yellow)', '🧾'],
+      ['Missing Stage', iss.orders_missing_stage, 'var(--blue)', '?'],
+      ['Delayed', iss.orders_with_delivery_delay, 'var(--orange)', '🚚'],
+    ].map(([label, value, color, icon]) => `
+      <div class="kpi-card" style="--ka:${color}">
+        <div class="kpi-label">${label}</div>
+        <div class="kpi-value" style="color:${color}">${value}</div>
+        <div class="kpi-glyph">${icon}</div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="card fu fu2">
+    <div class="card-label">Flagged orders — ${flagged.length} with issues</div>
+    <table class="dt">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Customer</th>
+          <th>Stage</th>
+          <th>Cancelled</th>
+          <th>Delayed</th>
+          <th>Unpaid</th>
+          <th>Missing</th>
+          <th>Sev.</th>
+          <th>Revenue</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${flagged.map(o => `
+          <tr onclick='openDrawer(${JSON.stringify(o).replace(/'/g,"&#39;")})'>
+            <td style="font-family:var(--font-m);font-size:11px;color:var(--text-2)">
+              ${o.sales_order_id}
+            </td>
+
+            <td style="font-size:12px">
+              ${o.customer_name || o.customer_id}
+            </td>
+
+            <td>
+              ${sbadge(o.lifecycle_stage)}
+            </td>
+
+            <td>
+              ${isTrue(o.is_billing_cancelled)
+                ? '<span class="badge b-danger">Yes</span>'
+                : '<span style="color:var(--text-3)">—</span>'}
+            </td>
+
+            <td>
+              ${isTrue(o.is_delivery_delayed)
+                ? '<span class="badge b-warn">Yes</span>'
+                : '<span style="color:var(--text-3)">—</span>'}
+            </td>
+
+            <td>
+              ${isTrue(o.is_unpaid)
+                ? '<span class="badge b-info">Yes</span>'
+                : '<span style="color:var(--text-3)">—</span>'}
+            </td>
+
+            <td>
+              ${isTrue(o.missing_stage)
+                ? '<span class="badge b-warn">Yes</span>'
+                : '<span style="color:var(--text-3)">—</span>'}
+            </td>
+
+            <td style="font-family:var(--font-m);font-size:11px;font-weight:700;color:var(--red)">
+              ${o.max_issue_severity}
+            </td>
+
+            <td style="font-family:var(--font-m);font-size:11px">
+              ${f.currency(o.order_total_net_amount)}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+  `;
+}
+// ── Customers ───────────────────────────────────────────
+async function pageCustomers(c) {
+  const cols=['var(--accent)','var(--accent-2)','var(--yellow)','var(--orange)','var(--red)','var(--blue)','var(--green)','var(--stage-delivered)'];
+  c.innerHTML=`<div class="cust-grid fu">${D.customers.map((cu,i)=>`
+    <div class="cust-card" onclick="go('lifecycle')">
+      <div class="cust-acc" style="background:${cols[i%cols.length]}"></div>
+      <div class="cust-name">${cu.customer_name}</div>
+      <div class="cust-id">${cu.customer_id}</div>
+      <div class="cust-stats">
+        <div><div class="cs-label">Revenue</div><div class="cs-val">${f.currency(cu.total_revenue_inr)}</div></div>
+        <div><div class="cs-label">Collected</div><div class="cs-val">${f.currency(cu.total_paid_inr)}</div></div>
+        <div><div class="cs-label">Orders</div><div class="cs-val">${cu.total_orders}</div></div>
+        <div><div class="cs-label">Avg O2C</div><div class="cs-val">${f.days(cu.avg_o2c_days)}</div></div>
+      </div>
+      <div class="cust-badges">
+        ${cu.cancelled_orders>0?`<span class="badge b-cancelled">${cu.cancelled_orders} cancelled</span>`:''}
+        ${cu.unpaid_orders>0?`<span class="badge b-warn">${cu.unpaid_orders} unpaid</span>`:''}
+        ${cu.delayed_orders>0?`<span class="badge b-info">${cu.delayed_orders} delayed</span>`:''}
+        ${cu.cancelled_orders===0&&cu.unpaid_orders===0&&cu.delayed_orders===0?'<span class="badge b-paid">Clean</span>':''}
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ── AI ──────────────────────────────────────────────────
+async function pageAI(c) {
+  const K=D.kpis;
+  c.innerHTML=`
+  <div class="ai-layout fu">
+    <div class="chat-wrap">
+      <div class="chat-messages" id="chat-msgs">
+        <div class="chat-bubble ba"><strong>O2C Intelligence</strong> ready.<br/>Ask about orders, customers, or performance. Try a suggestion →</div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-in" placeholder="Ask about orders, customers, delays…" />
+        <button class="btn btn-accent" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+      <div class="card">
+        <div class="card-label">Suggested queries</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${['Why is the cancellation rate 56%?','Which customer has the highest risk?','What is causing the revenue leakage?','Show orders with missing lifecycle stages','What is the average delivery time?']
+            .map(q=>`<button class="sug-chip" onclick="fillChat('${q}')">${q}</button>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Quick stats</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--text-2)">
+          <div style="display:flex;justify-content:space-between"><span>Cancellation rate</span><strong style="color:var(--red)">${f.pct(K.issues.cancellation_rate_pct)}</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Revenue leakage</span><strong style="color:var(--orange)">${f.currency(K.overview.revenue_leakage_inr)}</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Unpaid orders</span><strong style="color:var(--yellow)">${K.issues.orders_unpaid}</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Avg O2C cycle</span><strong style="color:var(--accent)">${f.days(K.cycle_times.avg_total_o2c_days)}</strong></div>
+        </div>
+      </div>
+      <div class="card" id="backend-status-card" style="border-color:rgba(255,255,255,.07)">
+        <div class="card-label">Backend status</div>
+        <div id="backend-status" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)">
+          <div class="spinner" style="width:12px;height:12px;flex-shrink:0"></div>
+          Checking connection…
+        </div>
+      </div>
+      <div class="card" id="insights-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="card-label" style="margin:0">AI insights</div>
+          <button class="btn btn-ghost" id="insights-btn" onclick="loadInsights(true)"
+            style="padding:3px 10px;font-size:11px">Generate</button>
+        </div>
+        <div id="insights-body" style="font-size:12px;color:var(--text-2)">
+          Click Generate to get AI-powered insights about your O2C data.
+        </div>
+      </div>
+    </div>
+  </div>`;
+  checkBackend();
+  if (D.backendOnline) loadInsights(false);
+}
+
+async function loadInsights(refresh=false) {
+  const body = document.getElementById('insights-body');
+  const btn  = document.getElementById('insights-btn');
+  if (!body || !D.backendOnline) return;
+  body.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><div class="spinner" style="width:12px;height:12px"></div> Generating insights…</div>';
+  if (btn) { btn.disabled=true; btn.textContent='Loading…'; }
+  try {
+    const res = await apiGet('/api/ai/insights', refresh ? {refresh:'true'} : {});
+    const items = res.insights || [];
+    if (!items.length) { body.innerHTML='<span style="color:var(--text-3)">No insights yet.</span>'; return; }
+    const sevColor = {critical:'var(--red)', warning:'var(--yellow)', info:'var(--blue)'};
+    body.innerHTML = items.map(ins=>`
+      <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+          <div style="width:6px;height:6px;border-radius:50%;background:${sevColor[ins.severity]||'var(--accent)'}"></div>
+          <span style="font-weight:600;font-size:12px;color:var(--text)">${ins.title||'Insight'}</span>
+        </div>
+        <div style="color:var(--text-2);line-height:1.6;margin-bottom:5px">${ins.summary||''}</div>
+        ${ins.recommendation?`<div style="background:var(--bg-raised);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--accent-2)"><strong>Action:</strong> ${ins.recommendation}</div>`:''}
+      </div>`).join('');
+    const model = res.model_used ? `<div style="font-size:10px;color:var(--text-3);font-family:var(--font-m);margin-top:4px">via ${res.model_used}${res.cached?' · cached':''}</div>` : '';
+    body.innerHTML += model;
+  } catch(e) {
+    body.innerHTML=`<span style="color:var(--red);font-size:11px">Failed: ${e.message}</span>`;
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='Regenerate'; }
+  }
+}
+
+function fillChat(q){const el=document.getElementById('chat-in');if(el){el.value=q;el.focus();}}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+async function sendMsg(){
+  const input=document.getElementById('chat-in'), msgs=document.getElementById('chat-msgs');
+  const q=input?.value?.trim(); if(!q||!msgs)return; input.value='';
+  msgs.innerHTML+=`<div class="chat-bubble bu">${escHtml(q)}</div>`;
+  const t=document.createElement('div'); t.className='chat-bubble ba';
+  t.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div class="spinner" style="width:14px;height:14px;flex-shrink:0"></div><span style="font-size:11px;color:var(--text-3)">Thinking\u2026</span></div>';
+  msgs.appendChild(t); msgs.scrollTop=msgs.scrollHeight;
+
+  if (D.backendOnline) {
+    try {
+      const res = await apiPost('/api/ai/query', {question: q});
+      const model = res.model_used ? `<span style="font-size:10px;color:var(--text-3);font-family:var(--font-m);margin-top:6px;display:block">via ${res.model_used}${res.cached?' \u00b7 cached':''}</span>` : '';
+      t.innerHTML = res.answer + model;
+      msgs.scrollTop=msgs.scrollHeight;
+      return;
+    } catch(e) {
+      console.warn('AI endpoint failed, using local fallback:', e.message);
+    }
+  }
+
+  await new Promise(r=>setTimeout(r,600+Math.random()*500));
+  const ql=q.toLowerCase();
+  const answers={
+    'cancellation':'Based on the data, <strong>56 of 100 orders (56%)</strong> have cancelled billing docs. The primary driver is <strong>Nelson, Fitzpatrick and Jordan</strong> (48 cancellations out of 72 orders). This is systematic \u2014 commercial/contractual rather than operational. Review payment terms and the billing process for this customer specifically.',
+    'risk':'Highest risk: <strong>Nelson, Fitzpatrick and Jordan</strong> (risk score 68). 72 orders, 48 cancellations. Despite \u20b927K ordered revenue, \u20b91.39L shows in "paid" \u2014 suggesting correction entries or reversals. Immediate account review needed.',
+    'leakage':'\u20b927,174 leakage (38%) from 3 sources: (1) 14 orders stuck at "ordered" with no delivery \u2014 \u20b938K+ value from Bradley-Kelley and Cardenas; (2) 22 unpaid invoices; (3) 56 cancelled billing docs. The undelivered high-value orders are the biggest single risk.',
+    'delivery':'Avg order\u2192delivery: <strong>0.52 days</strong> (median 0 \u2014 mostly same-day). 9 orders exceeded the 3-day threshold. Delivery\u2192billing averages <strong>3.84 days</strong> \u2014 the longest segment. Accelerating billing post-delivery would shorten the total O2C cycle.',
+    'missing':'14 orders stuck at "ordered" with no delivery record \u2014 all have <strong>overallDeliveryStatus = A</strong> (open). Largest: Bradley-Kelley (2 orders, \u20b919.9K) and Cardenas Parker (1 order, \u20b917.1K). Likely held or in-progress.',
+    'customer':'8 customers total. Top by revenue: Bradley-Kelley (\u20b919.9K), Cardenas Parker (\u20b917.1K). Highest risk: Nelson Fitzpatrick Jordan (72 orders, 48 cancellations, risk score 68). Cleanest: Henderson Garner Graves and Melton Group \u2014 no cancellations or delays.',
+    'unpaid':'22 orders are billed but no payment cleared. 20 from Nelson Fitzpatrick Jordan, 2 from Nguyen-Davis. Payment terms are Z001 (Net 30) for most \u2014 check if any have exceeded the 30-day window.',
+  };
+  let tag='<span style="font-size:10px;color:var(--text-3);font-family:var(--font-m);margin-top:6px;display:block">local mode \u2014 add API key for live AI</span>';
+  let ans=`<span style="color:var(--text-3);font-size:12px">Add an API key to <code style="font-family:var(--font-m)">backend/.env</code> for live AI answers. Try: cancellations, risk, leakage, delivery, missing, customers, unpaid.</span>`;
+  for(const[k,v] of Object.entries(answers)){if(ql.includes(k)){ans=v+tag;break;}}
+  t.innerHTML=ans; msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ── Order Drawer ────────────────────────────────────────
+function openDrawer(order) {
+  if(typeof order==='string'){try{order=JSON.parse(order);}catch(e){return;}}
+  const stages=['ordered','delivered','billed','paid'];
+  const si=stages.indexOf(order.lifecycle_stage);
+  const isCan=order.lifecycle_stage==='cancelled';
+
+  const track=stages.map((s,i)=>{
+    const done=!isCan&&i<si, active=!isCan&&i===si, err=isCan&&i<=Math.max(si,2);
+    return `<div class="s-node">
+      <div class="s-dot ${done?'done':active?'active':err?'error':''}">
+        ${done?'✓':err?'✕':['📋','🚚','🧾','✅'][i]}
+      </div>
+      <div class="s-name">${s}</div>
+    </div>${i<3?`<div class="s-line ${done?'done':''}"></div>`:''}`;
+  }).join('');
+
+  const flags=[
+    order.is_delivery_delayed==='True'  &&'<span class="badge b-warn">Delivery delayed</span>',
+    order.is_billing_cancelled==='True' &&'<span class="badge b-danger">Billing cancelled</span>',
+    order.is_unpaid==='True'            &&'<span class="badge b-info">Unpaid</span>',
+    order.missing_stage==='True'        &&'<span class="badge b-warn">Missing stage</span>',
+  ].filter(Boolean).join(' ')||'<span style="color:var(--green);font-size:12px">✓ No issues flagged</span>';
+
+  document.getElementById('dh').innerHTML=`
+    <div>
+      <div style="font-family:var(--font-d);font-weight:700;font-size:16px">Order ${order.sales_order_id}</div>
+      <div style="font-size:12px;color:var(--text-2);margin-top:2px">${order.customer_name||order.customer_id}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      ${sbadge(order.lifecycle_stage)}
+      <button class="btn btn-ghost" onclick="closeDrawer()" style="padding:4px 10px;font-size:16px">✕</button>
+    </div>`;
+
+  document.getElementById('db').innerHTML=`
+    <div class="drawer-sec">
+      <div class="drawer-sec-label">Lifecycle progress</div>
+      <div class="stage-track">${track}</div>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-label">Key metrics</div>
+      <div class="meta-grid">
+        ${[['Order value',f.currency(order.order_total_net_amount)],['Total O2C',f.days(order.total_o2c_days)],['Order→Del',f.days(order.order_to_delivery_days)],['Bill→Pay',f.days(order.billing_to_payment_days)]]
+          .map(([l,v])=>`<div class="meta-item"><div class="mi-label">${l}</div><div class="mi-val">${v}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-label">Order details</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--text-2)">
+        ${[['Order date',f.date(order.order_created_date)],['Req. delivery',f.date(order.requested_delivery_date)],['Payment terms',order.payment_terms],['Items',order.total_items],['Currency',order.currency]]
+          .map(([l,v])=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px"><span>${l}</span><span style="color:var(--text);font-family:var(--font-m)">${v}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-label">Issue flags</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${flags}</div>
+    </div>
+    ${D.backendOnline ? `
+    <div class="drawer-sec">
+      <div class="drawer-sec-label">AI root cause</div>
+      <button class="btn btn-ghost" id="rca-btn" onclick="runRCA('${order.sales_order_id}')"
+        style="width:100%;justify-content:center;border-color:rgba(124,109,250,.3);color:var(--accent)">
+        Analyse this order with AI
+      </button>
+      <div id="rca-result" style="margin-top:10px;font-size:12px;line-height:1.7;color:var(--text-2)"></div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('dov').classList.add('open');
+  document.getElementById('drw').classList.add('open');
+}
+
+function closeDrawer(){
+  document.getElementById('dov')?.classList.remove('open');
+  document.getElementById('drw')?.classList.remove('open');
+}
+
+async function runRCA(orderId) {
+  const btn = document.getElementById('rca-btn');
+  const result = document.getElementById('rca-result');
+  if (!btn || !result) return;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:12px;height:12px"></div> Analysing…';
+  try {
+    const res = await apiPost('/api/ai/root-cause', {order_id: String(orderId)});
+    result.innerHTML = `
+      <div style="margin-bottom:8px;color:var(--text)">${res.analysis}</div>
+      ${res.recommendations?.length ? `
+        <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Recommendations</div>
+        <ol style="padding-left:16px;display:flex;flex-direction:column;gap:5px">
+          ${res.recommendations.map(r=>`<li>${r}</li>`).join('')}
+        </ol>` : ''}
+      <div style="font-size:10px;color:var(--text-3);font-family:var(--font-m);margin-top:8px">via ${res.model_used||'AI'}</div>`;
+    btn.style.display = 'none';
+  } catch(e) {
+    result.innerHTML = `<span style="color:var(--red);font-size:11px">Analysis failed: ${e.message}</span>`;
+    btn.disabled = false;
+    btn.innerHTML = 'Analyse this order with AI';
+  }
+}
+
+window.openDrawer=openDrawer; window.closeDrawer=closeDrawer; window.go=go; window.fillChat=fillChat; window.sendMsg=sendMsg; window.runRCA=runRCA; window.loadInsights=loadInsights; window.checkBackend=checkBackend;
+
+// ══════════════════════════════════════════════════════════
+// RELATIONSHIP VIEW PAGE
+// ══════════════════════════════════════════════════════════
+
+// State
+const RV = { orderId:null, items:[], activeNode:null };
+
+const RV_COLORS = {
+  order:    '#7c6dfa',
+  delivery: '#4af0c4',
+  billing:  '#38b6ff',
+  payment:  '#22d47a',
+  cancelled:'#f05252',
+};
+
+const RV_ICONS = { order:'📋', delivery:'🚚', billing:'🧾', payment:'💳' };
+
+const RV_SAMPLES = ['740539','740556','740506','740509','740584','740543'];
+
+async function pageRelationships(container) {
+  container.innerHTML = `
+    <div class="rv-shell">
+      <div class="rv-canvas" id="rv-canvas">
+        <div class="rv-empty" id="rv-empty">
+          <div class="rv-empty-glyph">⬡</div>
+          <div style="font-size:13px;color:var(--text-2)">Enter an Order ID to explore its entity relationships</div>
+          <div style="font-size:11px;color:var(--text-3)">Order → Delivery → Billing → Payment</div>
+          <div class="rv-quick-picks" id="rv-picks"></div>
+        </div>
+        <div id="rv-flow" style="display:none"></div>
+      </div>
+      <div class="rv-panel">
+        <div class="rv-topbar">
+          <div class="rv-search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="rv-input" placeholder="Order ID…" autocomplete="off"/>
+          </div>
+          <button class="btn btn-accent" style="padding:5px 12px;font-size:12px" onclick="rvLoad(document.getElementById('rv-input').value.trim())">Go</button>
+        </div>
+        <div class="rv-ptabs">
+          <div class="rv-ptab rv-ptab-active" id="rv-tab-detail" onclick="rvTab('detail')">Detail</div>
+          <div class="rv-ptab" id="rv-tab-ai" onclick="rvTab('ai')">Ask AI</div>
+        </div>
+        <div id="rv-pbody-detail" class="rv-pbody">
+          <div style="padding:30px 0;text-align:center;color:var(--text-3)">
+            <div style="font-size:24px;opacity:.25;margin-bottom:8px">◈</div>
+            <div style="font-size:12px">Click any node to see details</div>
+          </div>
+        </div>
+        <div id="rv-pbody-ai" class="rv-pbody" style="display:none;flex-direction:column;padding:0;height:100%">
+          <div class="rv-ai-msgs" id="rv-ai-msgs">
+            <div class="rv-bubble a">Select an order then ask about delays, payment status, or issues.</div>
+          </div>
+          <div class="rv-sugs" id="rv-sugs">
+            <button class="rv-sug" onclick="rvAsk(this.textContent)">Why is this order delayed?</button>
+            <button class="rv-sug" onclick="rvAsk(this.textContent)">What is causing payment delay?</button>
+            <button class="rv-sug" onclick="rvAsk(this.textContent)">Summarise this order's issues</button>
+          </div>
+          <div class="rv-ai-input">
+            <input class="rv-ai-inp" id="rv-ai-inp" placeholder="Ask about this order…"
+              onkeydown="if(event.key==='Enter')rvSendAI()"/>
+            <button class="btn btn-accent" id="rv-ai-btn" onclick="rvSendAI()" style="padding:5px 12px;font-size:12px">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  // Quick picks
+  document.getElementById('rv-picks').innerHTML =
+    RV_SAMPLES.map(id => `<div class="rv-pill" onclick="rvLoad('${id}')">${id}</div>`).join('');
+
+  // Enter key on search
+  document.getElementById('rv-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') rvLoad(e.target.value.trim());
+  });
+}
+
+function rvTab(tab) {
+  const isDetail = tab === 'detail';
+  document.getElementById('rv-tab-detail').classList.toggle('rv-ptab-active', isDetail);
+  document.getElementById('rv-tab-ai').classList.toggle('rv-ptab-active', !isDetail);
+  const det = document.getElementById('rv-pbody-detail');
+  const ai  = document.getElementById('rv-pbody-ai');
+  if (det) det.style.display = isDetail ? '' : 'none';
+  if (ai)  { ai.style.display = isDetail ? 'none' : 'flex'; ai.style.flexDirection='column'; ai.style.height='100%'; }
+}
+
+function rvConn() {
+  return `<div class="rv-h-conn"><div class="rv-h-line"></div><div class="rv-h-arrow"></div></div>`;
+}
+
+function rvMakeNode(type, id, sub, color) {
+  const cancelled = type === 'billing' && RV.orderId && D.orders &&
+    D.orders.find(o=>String(o.sales_order_id)===String(RV.orderId))?.is_billing_cancelled === 'True';
+  const nc = cancelled && type === 'billing' ? RV_COLORS.cancelled : (color || RV_COLORS[type] || '#888');
+  return `
+    <div class="rv-node" data-ntype="${type}" data-nid="${id}"
+         tabindex="0" onclick="rvNodeClick('${type}','${escRv(String(id))}')"
+         onkeydown="if(event.key==='Enter')rvNodeClick('${type}','${escRv(String(id))}')"
+         style="--rnc:${nc}">
+      <div class="rv-node-body">
+        <div class="rv-node-icon">${RV_ICONS[type]||'◆'}</div>
+        <div class="rv-node-type">${type}</div>
+        <div class="rv-node-id" title="${id}">${String(id).slice(-10)}</div>
+        <div class="rv-node-sub">${sub}</div>
+      </div>
+    </div>`;
+}
+
+function escRv(s) { return s.replace(/'/g,"\\'"); }
+
+async function rvLoad(id) {
+  if (!id) return;
+  RV.orderId = id;
+  document.getElementById('rv-input').value = id;
+
+  const canvas = document.getElementById('rv-canvas');
+  const empty  = document.getElementById('rv-empty');
+  const flow   = document.getElementById('rv-flow');
+  if (!flow) return;
+
+  // Get order from D.orders (already loaded)
+  let order = D.orders ? D.orders.find(o => String(o.sales_order_id) === String(id)) : null;
+  let items = [];
+
+  // Try API if not found locally
+  if (!order && D.backendOnline) {
+    try {
+      const [o, ctx] = await Promise.all([
+        apiGet(`/api/orders/${id}`),
+        apiGet(`/api/orders/${id}/items`),
+      ]);
+      if (o && !o.error) { order = o; items = (ctx.items||[]); }
+    } catch(e) {}
+  }
+
+  // Get items from CSV data
+  if (!items.length && D.orders) {
+    // Parse items from unified_o2c.csv via the already-loaded ITEMS in relationship-view
+    // Since index.html loads orders CSV only, fetch items separately
+    try {
+      const bases = ['../data/processed/', 'data/processed/'];
+      for (const base of bases) {
+        try {
+          const csv = await fetch(base + 'unified_o2c.csv').then(r => { if(!r.ok) throw 0; return r.text(); });
+          const allItems = parseCSV(csv);
+          items = allItems.filter(i => String(i.sales_order_id) === String(id));
+          if (items.length) break;
+        } catch(e) { continue; }
+      }
+    } catch(e) {}
+  }
+
+  RV.items = items;
+
+  if (!order) {
+    flow.style.display = 'flex';
+    if (empty) empty.style.display = 'none';
+    flow.innerHTML = `<div style="color:var(--red);font-family:var(--font-m);font-size:12px;padding:40px">Order ${id} not found. Try: ${RV_SAMPLES.join(', ')}</div>`;
+    return;
+  }
+
+  if (empty) empty.style.display = 'none';
+  flow.style.display = 'flex';
+  flow.style.flexDirection = 'column';
+  flow.style.alignItems = 'center';
+  flow.className = 'rv-flow';
+
+  rvRenderFlow(order, items, flow);
+  rvShowDetail('order', id, order, items);
+  rvTab('detail');
+
+  // Mark order node as active
+  setTimeout(() => {
+    const first = flow.querySelector('.rv-node');
+    if (first) first.classList.add('rv-active');
+  }, 30);
+}
+
+function rvRenderFlow(order, items, flow) {
+  flow.innerHTML = '';
+  const stage = order.lifecycle_stage;
+  const isCan = stage === 'cancelled';
+
+  const deliveryIds = [...new Set(items.map(i=>i.delivery_id).filter(rvReal))];
+  const billingIds  = [...new Set(items.map(i=>i.billing_doc_id).filter(rvReal))];
+  const acctDocs    = [...new Set(items.map(i=>i.accounting_document).filter(rvReal))];
+
+  const hasDelivery = deliveryIds.length > 0 || ['delivered','billed','paid','cancelled'].includes(stage);
+  const hasBilling  = billingIds.length  > 0 || ['billed','paid','cancelled'].includes(stage);
+  const hasPayment  = !isCan && (acctDocs.length > 0 || stage === 'paid');
+
+  // ── Why Flagged (rule engine) ─────────────────────────
+  const flags = rvComputeFlags(order, items);
+
+  // ── Real sub-labels from actual field values ──────────
+  const item0 = items[0] || {};
+  const custShort = (order.customer_name||'').split(',')[0] || order.customer_id || '';
+
+  const delCreated = rvFmtDate(item0.delivery_created_date);
+  const o2dDays    = rvReal(order.order_to_delivery_days) ? rvFmtDays(order.order_to_delivery_days) : '';
+  const delSub = delCreated !== '—'
+    ? delCreated + (o2dDays ? ' · ' + o2dDays + ' O→D' : '')
+    : (hasDelivery ? 'Pending' : '—');
+
+  const bilDate = rvFmtDate(item0.billing_date);
+  const d2bDays = rvReal(order.delivery_to_billing_days) ? rvFmtDays(order.delivery_to_billing_days) : '';
+  const bilSub = isCan ? 'Cancelled · ' + bilDate
+    : bilDate !== '—' ? bilDate + (d2bDays ? ' · ' + d2bDays + ' D→B' : '') : (hasBilling ? 'Pending' : '—');
+
+  const payDate = rvFmtDate(item0.payment_posting_date);
+  const b2pDays = rvReal(order.billing_to_payment_days) ? rvFmtDays(order.billing_to_payment_days) : '';
+  const paySub = payDate !== '—'
+    ? payDate + (b2pDays ? ' · ' + b2pDays + ' B→P' : '')
+    : (hasPayment ? 'Pending' : '—');
+
+  // ── Stage row ──────────────────────────────────────────
+  let rowHtml = rvMakeNode('order', rvFmt(order.sales_order_id),
+    rvFmtDate(order.order_created_date) + (custShort ? ' · ' + custShort : ''), RV_COLORS.order);
+
+  if (hasDelivery) {
+    const dId = deliveryIds[0] ? rvFmt(deliveryIds[0]) : '—';
+    rowHtml += rvConn() + rvMakeNode('delivery', dId, delSub, isCan ? RV_COLORS.cancelled : RV_COLORS.delivery);
+  }
+  if (hasBilling) {
+    const bId = billingIds[0] ? rvFmt(billingIds[0]) : '—';
+    rowHtml += rvConn() + rvMakeNode('billing', bId, bilSub, isCan ? RV_COLORS.cancelled : RV_COLORS.billing);
+  }
+  if (hasPayment) {
+    const pId = acctDocs[0] ? rvFmt(acctDocs[0]) : '—';
+    rowHtml += rvConn() + rvMakeNode('payment', pId, paySub, RV_COLORS.payment);
+  }
+
+  const stageRow = document.createElement('div');
+  stageRow.className = 'rv-stage-row';
+  stageRow.innerHTML = rowHtml;
+  flow.appendChild(stageRow);
+
+  // ── Cycle time chips ──────────────────────────────────
+  const cycleBar = document.createElement('div');
+  cycleBar.className = 'rv-cycle-bar';
+  const expPay = Number(order.expected_payment_days) || RV_THRESHOLDS.PAYMENT_OVERDUE_DAYS;
+  [
+    { l:'Order→Delivery',  v:order.order_to_delivery_days,    c:RV_COLORS.delivery, t:RV_THRESHOLDS.DELIVERY_DELAY_DAYS },
+    { l:'Delivery→Billing',v:order.delivery_to_billing_days,  c:RV_COLORS.billing,  t:RV_THRESHOLDS.BILLING_DELAY_DAYS },
+    { l:'Billing→Payment', v:order.billing_to_payment_days,   c:RV_COLORS.payment,  t:expPay },
+    { l:'Total O2C',       v:order.total_o2c_days,            c:'#7c6dfa',          t:null },
+  ].forEach(({l, v, c, t}) => {
+    const d = rvFmtDays(v);
+    const n = Number(v);
+    const over = t !== null && rvReal(v) && !isNaN(n) && n > t;
+    cycleBar.innerHTML += `
+      <div class="rv-cycle-chip" style="${over?'border-color:rgba(240,82,82,.3)':''}">
+        <div style="font-size:8px;font-family:var(--font-m);color:var(--text-3);margin-bottom:2px">${l}</div>
+        <div style="font-size:12px;font-weight:700;font-family:var(--font-m);color:${over?'var(--red)':d==='—'?'var(--text-3)':c}">${d}</div>
+        ${over?`<div style="font-size:8px;color:var(--red);font-family:var(--font-m);margin-top:1px">▲ >${t}d</div>`:''}
+      </div>`;
+  });
+  flow.appendChild(cycleBar);
+
+  // ── Why Flagged panel ─────────────────────────────────
+  if (flags.length > 0) {
+    const fs = document.createElement('div');
+    fs.style.cssText = 'width:100%;margin-top:18px';
+    fs.innerHTML = `
+      <div style="font-size:9px;font-family:var(--font-m);color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Why flagged</div>
+      ${flags.map(fl=>`
+        <div style="display:flex;align-items:flex-start;gap:9px;background:var(--bg-card);border:1px solid ${fl.bc};border-left:3px solid ${fl.c};border-radius:9px;padding:9px 13px;margin-bottom:5px">
+          <span style="font-size:14px;flex-shrink:0">${fl.icon}</span>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:${fl.c};font-family:var(--font-m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${fl.label}</div>
+            <div style="font-size:11px;color:var(--text-2);line-height:1.55">${fl.explanation}</div>
+            ${fl.fk?`<div style="margin-top:4px;font-size:10px;font-family:var(--font-m);color:var(--text-3)">${fl.fk} = <span style="color:${fl.c}">${fl.fv}</span></div>`:''}
+          </div>
+        </div>`).join('')}`;
+    flow.appendChild(fs);
+  } else if (stage === 'paid') {
+    const ok = document.createElement('div');
+    ok.style.cssText = 'margin-top:14px;display:flex;align-items:center;gap:8px;background:rgba(34,212,122,.07);border:1px solid rgba(34,212,122,.2);border-radius:9px;padding:9px 14px;font-size:12px;color:var(--green)';
+    ok.innerHTML = `<span>✓</span> Lifecycle complete — no issues. Payment cleared in ${rvFmtDays(order.billing_to_payment_days)} after billing.`;
+    flow.appendChild(ok);
+  }
+
+  // ── Items row ─────────────────────────────────────────
+  if (items.length) {
+    const lbl = document.createElement('div');
+    lbl.className = 'rv-items-label';
+    lbl.textContent = `Line items (${items.length})`;
+    flow.appendChild(lbl);
+
+    const scroll = document.createElement('div');
+    scroll.className = 'rv-items-scroll';
+    items.slice(0, 7).forEach((item, idx) => {
+      if (idx > 0) {
+        const sep = document.createElement('div');
+        sep.className = 'rv-h-conn';
+        sep.innerHTML = '<div class="rv-h-line"></div><div class="rv-h-arrow"></div>';
+        scroll.appendChild(sep);
+      }
+      const chip = document.createElement('div');
+      chip.className = 'rv-item-chip';
+      const iCan = String(item.is_cancelled)==='True'||String(item.is_billing_cancelled)==='True';
+      if (iCan) chip.style.borderColor = 'rgba(240,82,82,.25)';
+      chip.onclick = () => { document.querySelectorAll('.rv-item-chip').forEach(c=>c.classList.remove('rv-active')); chip.classList.add('rv-active'); rvItemClick(item, chip); };
+      const desc = (item.material_desc||item.material_id||'—').slice(0, 24);
+      const amt  = rvReal(item.item_net_amount) ? rvFmtCurrency(item.item_net_amount) : '—';
+      chip.innerHTML = `
+        <div class="rv-item-type">Item ${item.sales_order_item||idx+1}</div>
+        <div class="rv-item-id">${(item.material_id||'—').slice(-9)}</div>
+        <div class="rv-item-desc">${desc}</div>
+        <div style="font-size:10px;font-family:var(--font-m);color:${iCan?'var(--red)':'var(--text-3)'};margin-top:3px">${iCan?'Cancelled':amt}</div>`;
+      scroll.appendChild(chip);
+    });
+    if (items.length > 7) {
+      const m=document.createElement('div'); m.style.cssText='font-size:10px;color:var(--text-3);font-family:var(--font-m);padding:0 8px;flex-shrink:0;align-self:center'; m.textContent=`+${items.length-7}`; scroll.appendChild(m);
+    }
+    flow.appendChild(scroll);
+  }
+
+  // Wire node clicks
+  flow.querySelectorAll('.rv-node').forEach(n => {
+    n.addEventListener('click', () => {
+      flow.querySelectorAll('.rv-node').forEach(x=>x.classList.remove('rv-active'));
+      n.classList.add('rv-active');
+    });
+  });
+}
+function var_css(v) {
+  const m = { '--yellow':'#f5c842','--red':'#f05252','--blue':'#38b6ff','--violet':'#a78bfa','--green':'#22d47a' };
+  return m[v] || '#888';
+}
+
+// ── RV helper utils ───────────────────────────────────
+const RV_THRESHOLDS = { DELIVERY_DELAY_DAYS:3, BILLING_DELAY_DAYS:5, PAYMENT_OVERDUE_DAYS:30 };
+
+function rvReal(v) {
+  return v !== undefined && v !== null && String(v).trim() !== '' && String(v) !== 'nan' && String(v) !== 'NaN' && String(v) !== 'None';
+}
+function rvFmt(v)         { return (!v||String(v)==='nan') ? '—' : String(v); }
+function rvFmtDate(v)     { return (!v||String(v)==='nan') ? '—' : String(v).slice(0,10); }
+function rvFmtCurrency(v) { if(!v||isNaN(Number(v)))return '—'; return '₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:0}); }
+function rvFmtDays(v)     { if(!rvReal(v)||isNaN(Number(v)))return '—'; return Math.round(Number(v))+'d'; }
+
+// ── Rule-based flag engine (mirrors backend logic) ────
+function rvComputeFlags(order, items) {
+  const flags = [];
+  const item0 = items[0] || {};
+  const stage = order.lifecycle_stage;
+
+  // Rule 1: Billing cancelled
+  if (String(order.is_billing_cancelled)==='True' || String(item0.is_cancelled)==='True') {
+    const bId = items.find(i=>rvReal(i.billing_doc_id))?.billing_doc_id || '—';
+    flags.push({ icon:'✕', label:'Billing cancelled',
+      c:'#f05252', bc:'rgba(240,82,82,.15)',
+      explanation:`Billing doc ${rvFmt(bId)} was cancelled or reversed. Goods may have been delivered but invoice voided — common causes: customer return, pricing dispute, or duplicate billing.`,
+      fk:'is_billing_cancelled', fv:'True' });
+  }
+
+  // Rule 2: Unpaid invoice
+  const hasBil = items.some(i=>rvReal(i.billing_doc_id));
+  const hasPay = items.some(i=>rvReal(i.payment_posting_date));
+  const isUnpaid = String(order.is_unpaid)==='True' || (hasBil && !hasPay && stage!=='cancelled');
+  if (isUnpaid && stage!=='paid') {
+    const expD = Number(order.expected_payment_days)||30;
+    flags.push({ icon:'🧾', label:'Unpaid invoice',
+      c:'#38b6ff', bc:'rgba(56,182,255,.12)',
+      explanation:`Invoice raised on ${rvFmtDate(item0.billing_date)} but no payment received. Due: ${rvFmtCurrency(order.order_total_net_amount)}. Terms: ${order.payment_terms||'—'} (Net ${expD}d). Escalate to AR if past due.`,
+      fk:'is_unpaid', fv:'True' });
+  }
+
+  // Rule 3: Delivery delayed
+  const o2d = Number(order.order_to_delivery_days);
+  if (String(order.is_delivery_delayed)==='True' || (rvReal(order.order_to_delivery_days) && !isNaN(o2d) && o2d > RV_THRESHOLDS.DELIVERY_DELAY_DAYS)) {
+    flags.push({ icon:'🚚', label:`Delivery delayed (${Math.round(o2d)}d)`,
+      c:'#f5c842', bc:'rgba(245,200,66,.12)',
+      explanation:`Delivery took ${Math.round(o2d)}d — exceeds ${RV_THRESHOLDS.DELIVERY_DELAY_DAYS}d threshold. Ordered: ${rvFmtDate(order.order_created_date)}, delivered: ${rvFmtDate(item0.delivery_created_date)}. Check warehouse or plant ${item0.delivery_plant||item0.plant||'—'}.`,
+      fk:'order_to_delivery_days', fv:`${Math.round(o2d)}d (limit: ${RV_THRESHOLDS.DELIVERY_DELAY_DAYS}d)` });
+  }
+
+  // Rule 4: Missing lifecycle stage
+  const hasDel = items.some(i=>rvReal(i.delivery_id));
+  const isMissing = String(order.missing_stage)==='True' || (!hasDel && stage!=='ordered') || (stage==='ordered' && !hasDel);
+  if (isMissing) {
+    const missing = [];
+    if (!hasDel) missing.push('Delivery');
+    if (!hasBil && !['ordered','delivered'].includes(stage)) missing.push('Billing');
+    if (!hasPay && stage==='billed') missing.push('Payment');
+    if (!missing.length) missing.push('stage record');
+    flags.push({ icon:'?', label:`Missing: ${missing.join(', ')}`,
+      c:'#a78bfa', bc:'rgba(167,139,250,.12)',
+      explanation:`Stage <strong>${stage}</strong> but no ${missing.join('/')} document exists. Breaks audit trail — check SAP document flow for gaps.`,
+      fk:'missing_stage', fv:'True' });
+  }
+
+  // Rule 5: Payment overdue
+  const b2p = Number(order.billing_to_payment_days);
+  const expPay = Number(order.expected_payment_days) || RV_THRESHOLDS.PAYMENT_OVERDUE_DAYS;
+  if (String(order.is_payment_overdue)==='True' || (rvReal(order.billing_to_payment_days) && !isNaN(b2p) && b2p > expPay)) {
+    flags.push({ icon:'⏰', label:`Payment overdue (${Math.round(b2p)}d vs ${expPay}d terms)`,
+      c:'#ff8c42', bc:'rgba(255,140,66,.12)',
+      explanation:`Payment took ${Math.round(b2p)}d — exceeds agreed ${expPay}d terms (${order.payment_terms||'—'}). Send payment reminder or escalate to credit management.`,
+      fk:'billing_to_payment_days', fv:`${Math.round(b2p)}d (terms: ${expPay}d)` });
+  }
+
+  // Rule 6: Billing delay
+  const d2b = Number(order.delivery_to_billing_days);
+  if (rvReal(order.delivery_to_billing_days) && !isNaN(d2b) && d2b > RV_THRESHOLDS.BILLING_DELAY_DAYS) {
+    flags.push({ icon:'📄', label:`Billing delay (${Math.round(d2b)}d)`,
+      c:'#f5c842', bc:'rgba(245,200,66,.12)',
+      explanation:`Billing raised ${Math.round(d2b)}d after delivery — expected ≤${RV_THRESHOLDS.BILLING_DELAY_DAYS}d. Delays cash collection. Check billing run schedule or manual blocks.`,
+      fk:'delivery_to_billing_days', fv:`${Math.round(d2b)}d (limit: ${RV_THRESHOLDS.BILLING_DELAY_DAYS}d)` });
+  }
+
+  // Rule 7: Rejection
+  if (items.some(i=>rvReal(i.rejection_reason))) {
+    const reasons = [...new Set(items.map(i=>i.rejection_reason).filter(rvReal))];
+    flags.push({ icon:'🚫', label:'Line item rejected',
+      c:'#f05252', bc:'rgba(240,82,82,.12)',
+      explanation:`One or more items rejected: <strong>${reasons.join(', ')}</strong>. Rejected items won't be delivered or billed. Review cause and re-order if needed.`,
+      fk:'rejection_reason', fv:reasons.join(', ') });
+  }
+
+  return flags;
+}
+
+function rvNodeClick(type, id) {
+  const order = D.orders?.find(o => String(o.sales_order_id)===String(RV.orderId));
+  if (!order) return;
+  rvShowDetail(type, id, order, RV.items);
+  rvTab('detail');
+}
+
+function rvItemClick(item, el) {
+  document.querySelectorAll('.rv-item-chip').forEach(c=>c.classList.remove('rv-active'));
+  if(el) el.classList.add('rv-active');
+  rvShowItemDetail(item);
+  rvTab('detail');
+}
+
+function rvShowDetail(type, id, order, items) {
+  const el = document.getElementById('rv-pbody-detail');
+  if (!el) return;
+  const isCan = order.lifecycle_stage === 'cancelled';
+  const NC = { order:RV_COLORS.order, delivery:RV_COLORS.delivery,
+    billing: isCan?RV_COLORS.cancelled:RV_COLORS.billing, payment:RV_COLORS.payment }[type]||'#888';
+
+  const deliveryIds = [...new Set(items.map(i=>i.delivery_id).filter(rvReal))];
+  const billingIds  = [...new Set(items.map(i=>i.billing_doc_id).filter(rvReal))];
+  const acctDocs    = [...new Set(items.map(i=>i.accounting_document).filter(rvReal))];
+  const item0 = items.find(i=>{
+    if(type==='delivery') return rvReal(i.delivery_id);
+    if(type==='billing')  return rvReal(i.billing_doc_id);
+    if(type==='payment')  return rvReal(i.accounting_document);
+    return true;
+  })||{};
+
+  let title='', status=order.lifecycle_stage, fields=[];
+
+  if (type==='order') {
+    title = rvFmt(order.sales_order_id);
+    fields = [
+      {k:'customer_id',      v:order.customer_id},
+      {k:'customer_name',    v:order.customer_name},
+      {k:'order_date',       v:rvFmtDate(order.order_created_date)},
+      {k:'req_delivery',     v:rvFmtDate(order.requested_delivery_date)},
+      {k:'payment_terms',    v:order.payment_terms},
+      {k:'currency',         v:order.currency},
+      {k:'order_amount',     v:rvFmtCurrency(order.order_total_net_amount), cls:'good'},
+      {k:'total_paid',       v:rvFmtCurrency(order.total_paid_amount), cls:Number(order.total_paid_amount)>0?'good':'warn'},
+      {k:'revenue_leakage',  v:rvFmtCurrency(order.revenue_leakage_amount), cls:Number(order.revenue_leakage_amount)>0?'bad':''},
+      {k:'total_items',      v:order.total_items},
+      {k:'lifecycle_stage',  v:order.lifecycle_stage},
+      {k:'max_severity',     v:order.max_issue_severity||'0', cls:Number(order.max_issue_severity)>=3?'bad':Number(order.max_issue_severity)>0?'warn':''},
+    ];
+  } else if (type==='delivery') {
+    title = deliveryIds[0]?rvFmt(deliveryIds[0]):id;
+    status = Number(order.order_to_delivery_days)>RV_THRESHOLDS.DELIVERY_DELAY_DAYS?'delayed':'on time';
+    fields = [
+      {k:'delivery_id',         v:rvFmt(deliveryIds[0]||'—')},
+      {k:'created_date',        v:rvFmtDate(item0.delivery_created_date)},
+      {k:'goods_mvmt_date',     v:rvFmtDate(item0.actual_goods_movement_date)||'—'},
+      {k:'goods_mvmt_status',   v:item0.goods_movement_status||'—'},
+      {k:'picking_status',      v:item0.picking_status||'—'},
+      {k:'shipping_point',      v:item0.shipping_point||'—'},
+      {k:'delivery_plant',      v:item0.delivery_plant||item0.plant||'—'},
+      {k:'storage_location',    v:item0.storage_location||'—'},
+      {k:'order_to_delivery',   v:rvFmtDays(order.order_to_delivery_days),
+       cls:Number(order.order_to_delivery_days)>RV_THRESHOLDS.DELIVERY_DELAY_DAYS?'bad':'good'},
+    ];
+  } else if (type==='billing') {
+    title = billingIds[0]?rvFmt(billingIds[0]):id;
+    status = isCan?'cancelled':'active';
+    fields = [
+      {k:'billing_doc_id',     v:rvFmt(billingIds[0]||'—')},
+      {k:'billing_type',       v:item0.billing_type||'—'},
+      {k:'billing_date',       v:rvFmtDate(item0.billing_date)},
+      {k:'billing_amount',     v:rvFmtCurrency(item0.billing_amount||item0.billed_amount_sum), cls:isCan?'bad':'good'},
+      {k:'billed_qty',         v:item0.billed_qty||'—'},
+      {k:'is_cancelled',       v:isCan?'Yes':'No', cls:isCan?'bad':'good'},
+      {k:'acct_document',      v:rvFmt(acctDocs[0]||'—')},
+      {k:'company_code',       v:item0.company_code||'ABCD'},
+      {k:'delivery_to_billing',v:rvFmtDays(order.delivery_to_billing_days),
+       cls:Number(order.delivery_to_billing_days)>RV_THRESHOLDS.BILLING_DELAY_DAYS?'bad':''},
+    ];
+  } else if (type==='payment') {
+    title = acctDocs[0]?rvFmt(acctDocs[0]):id;
+    status = 'cleared';
+    const expP = Number(order.expected_payment_days)||RV_THRESHOLDS.PAYMENT_OVERDUE_DAYS;
+    const b2p  = Number(order.billing_to_payment_days);
+    fields = [
+      {k:'acct_document',      v:rvFmt(acctDocs[0]||'—')},
+      {k:'posting_date',       v:rvFmtDate(item0.payment_posting_date)},
+      {k:'clearing_date',      v:rvFmtDate(item0.payment_clearing_date)},
+      {k:'amount_paid',        v:rvFmtCurrency(item0.total_amount_paid||order.total_paid_amount), cls:'good'},
+      {k:'currency',           v:item0.currency||order.currency||'INR'},
+      {k:'billing_to_pay',     v:rvFmtDays(order.billing_to_payment_days), cls:b2p>expP?'bad':'good'},
+      {k:'payment_terms',      v:order.payment_terms||'—'},
+      {k:'expected_days',      v:expP+'d'},
+    ];
+  }
+
+  // Timeline with real field values
+  const item0t = items[0]||{};
+  const hasDel = items.some(i=>rvReal(i.delivery_id));
+  const hasBil = items.some(i=>rvReal(i.billing_doc_id));
+  const hasPay = items.some(i=>rvReal(i.payment_posting_date));
+  const tlSteps = [
+    { s:'Sales order', date:rvFmtDate(order.order_created_date),
+      sub:`${order.order_type||'OR'} · ${rvFmtCurrency(order.order_total_net_amount)}`,
+      cls:'done', days:null },
+    { s:'Delivery', date:hasDel?rvFmtDate(item0t.delivery_created_date):'—',
+      sub:hasDel?`ID: ${rvFmt(deliveryIds[0]||'—')} · ${item0t.delivery_plant||item0t.plant||'—'}`:'No delivery record',
+      cls:hasDel?(isCan?'err':'done'):(order.lifecycle_stage==='ordered'?'active':''),
+      days:rvReal(order.order_to_delivery_days)?rvFmtDays(order.order_to_delivery_days)+' from order':null },
+    { s:'Billing', date:hasBil?rvFmtDate(item0t.billing_date):'—',
+      sub:hasBil?(isCan?'Cancelled · '+rvFmt(billingIds[0]||'—'):`${rvFmt(billingIds[0]||'—')} · ${rvFmtCurrency(item0t.billing_amount||item0t.billed_amount_sum)}`):'Not yet billed',
+      cls:hasBil?(isCan?'err':'done'):(hasDel&&!hasBil?'active':''),
+      days:rvReal(order.delivery_to_billing_days)?rvFmtDays(order.delivery_to_billing_days)+' from delivery':null },
+    { s:'Payment', date:hasPay?rvFmtDate(item0t.payment_posting_date):'—',
+      sub:hasPay?`Cleared: ${rvFmtDate(item0t.payment_clearing_date)} · ${rvFmt(acctDocs[0]||'—')}`:(order.lifecycle_stage==='billed'?'Awaiting payment':'Not yet paid'),
+      cls:hasPay?'done':(hasBil&&!hasPay&&!isCan?'active':''),
+      days:rvReal(order.billing_to_payment_days)?rvFmtDays(order.billing_to_payment_days)+' from billing':null },
+  ];
+
+  const fldHtml = (cls) => cls==='good'?'color:var(--green)':cls==='bad'?'color:var(--red)':cls==='warn'?'color:var(--yellow)':'color:var(--text)';
+
+  el.innerHTML = `<div style="animation:fadeUp .2s ease forwards">
+    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:2px">
+      <div class="rv-detail-type" style="color:${NC}">${type}</div>
+      <div class="rv-detail-id">${title}</div>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--font-m);
+        padding:2px 9px;border-radius:99px;background:var(--bg-raised);color:${NC};border:1px solid ${NC}33">
+        <span style="width:5px;height:5px;border-radius:50%;background:${NC};display:inline-block"></span>${status}
+      </span>
+    </div>
+
+    <div class="rv-timeline">
+      <div class="rv-tl-title">Lifecycle timeline</div>
+      ${tlSteps.map((st,i)=>`
+        <div class="rv-tl-step">
+          ${i<tlSteps.length-1?`<div style="position:absolute;left:5px;top:13px;bottom:0;width:1px;background:var(--border-med)"></div>`:''}
+          <div class="rv-tl-dot ${st.cls==='done'?'done':st.cls==='active'?'active':st.cls==='err'?'err':''}"></div>
+          <div>
+            <div class="rv-tl-stage">${st.s}</div>
+            <div class="rv-tl-date">${st.date}${st.sub?' · '+st.sub:''}</div>
+            ${st.days?`<div class="rv-tl-days">${st.days}</div>`:''}
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="rv-fields">
+      ${fields.map(fld=>`
+        <div class="rv-field">
+          <span class="rv-fkey">${fld.k}</span>
+          <span class="rv-fval" style="${fldHtml(fld.cls||'')}">${fld.v||'—'}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+function rvShowItemDetail(item) {
+  const el = document.getElementById('rv-pbody-detail');
+  if (!el) return;
+  const iCan = String(item.is_cancelled)==='True'||String(item.is_billing_cancelled)==='True';
+  const iRej = rvReal(item.rejection_reason);
+  const fldColor = (cls) => cls==='good'?'color:var(--green)':cls==='bad'?'color:var(--red)':cls==='warn'?'color:var(--yellow)':'color:var(--text)';
+  const fields = [
+    {k:'sales_order_id',   v:rvFmt(item.sales_order_id)},
+    {k:'item',             v:item.sales_order_item},
+    {k:'material_id',      v:item.material_id},
+    {k:'material_desc',    v:item.material_desc||'—'},
+    {k:'quantity',         v:`${item.item_qty||'—'} ${item.qty_unit||''}`.trim()},
+    {k:'item_net_amount',  v:rvFmtCurrency(item.item_net_amount), cls:'good'},
+    {k:'plant',            v:item.plant||item.delivery_plant||'—'},
+    {k:'storage_location', v:item.storage_location||'—'},
+    {k:'lifecycle_stage',  v:item.lifecycle_stage||'—'},
+    {k:'is_cancelled',     v:iCan?'Yes':'No', cls:iCan?'bad':''},
+    {k:'rejection_reason', v:item.rejection_reason||'—', cls:iRej?'bad':''},
+    {k:'delivery_id',      v:rvFmt(item.delivery_id||'—')},
+    {k:'billing_doc_id',   v:rvFmt(item.billing_doc_id||'—')},
+    {k:'billed_amount',    v:rvFmtCurrency(item.billed_amount_sum)},
+    {k:'picking_status',   v:item.picking_status||'—'},
+    {k:'issue_severity',   v:item.issue_severity||'0', cls:Number(item.issue_severity)>=3?'bad':Number(item.issue_severity)>0?'warn':''},
+  ];
+  el.innerHTML = `<div style="animation:fadeUp .2s ease forwards">
+    <div style="border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:10px">
+      <div class="rv-detail-type" style="color:var(--accent)">line item</div>
+      <div class="rv-detail-id">Item ${item.sales_order_item||'—'}</div>
+      <div style="font-size:11px;color:var(--text-2);font-family:var(--font-m);margin-top:2px">${(item.material_desc||item.material_id||'').slice(0,36)}</div>
+      ${iCan?`<div style="margin-top:6px"><span class="badge b-cancelled">Cancelled</span></div>`:''}
+      ${iRej?`<div style="margin-top:4px"><span class="badge b-danger">Rejected: ${item.rejection_reason}</span></div>`:''}
+    </div>
+    <div class="rv-fields">
+      ${fields.map(fld=>`
+        <div class="rv-field">
+          <span class="rv-fkey">${fld.k}</span>
+          <span class="rv-fval" style="${fldColor(fld.cls||'')}">${fld.v||'—'}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function rvTimeline(order, items) {
+  const stage = order.lifecycle_stage;
+  const isCan = stage === 'cancelled';
+  const item0 = items[0]||{};
+  return [
+    { stage:'Sales order', date:f.date(order.order_created_date),      cls:'done', days:null },
+    { stage:'Delivery',    date:f.date(item0.delivery_created_date),    cls:['delivered','billed','paid','cancelled'].includes(stage)?(isCan?'err':'done'):'active',
+      days:f.days(order.order_to_delivery_days)!=='—'?f.days(order.order_to_delivery_days)+' from order':null },
+    { stage:'Billing',     date:f.date(item0.billing_date),             cls:isCan?'err':['billed','paid'].includes(stage)?'done':'',
+      days:f.days(order.delivery_to_billing_days)!=='—'?f.days(order.delivery_to_billing_days)+' from delivery':null },
+    { stage:'Payment',     date:f.date(item0.payment_posting_date),     cls:stage==='paid'?'done':stage==='billed'?'active':'',
+      days:f.days(order.billing_to_payment_days)!=='—'?f.days(order.billing_to_payment_days)+' from billing':null },
+  ];
+}
+
+// ── RV AI Chat ────────────────────────────────────────────
+function rvAsk(q) {
+  const inp = document.getElementById('rv-ai-inp');
+  if (inp) { inp.value = q; rvSendAI(); }
+}
+
+async function rvSendAI() {
+  const inp  = document.getElementById('rv-ai-inp');
+  const msgs = document.getElementById('rv-ai-msgs');
+  const btn  = document.getElementById('rv-ai-btn');
+  const q = inp?.value?.trim();
+  if (!q || !msgs) return;
+  if (!RV.orderId) { rvAppendMsg('a','Select an order first.',msgs); return; }
+  inp.value = '';
+  rvAppendMsg('u', q, msgs);
+  btn.disabled = true;
+  const t = rvAppendMsg('a','<div class="spinner" style="width:12px;height:12px"></div>', msgs);
+
+  if (D.backendOnline) {
+    try {
+      const order = D.orders?.find(o=>String(o.sales_order_id)===String(RV.orderId));
+      const ctx = rvBuildCtx(order, RV.items, RV.orderId);
+      const res = await apiPost('/api/ai/query', {question:`Order ${RV.orderId}: ${q}\n\nContext:\n${ctx}`});
+      const tag = res.model_used?`<span style="font-size:9px;color:var(--text-3);font-family:var(--font-m);margin-top:4px;display:block">via ${res.model_used}${res.cached?' · cached':''}</span>`:'';
+      t.innerHTML = (res.answer||'No response.')+tag;
+      btn.disabled=false; msgs.scrollTop=msgs.scrollHeight; return;
+    } catch(e) {}
+  }
+
+  await new Promise(r=>setTimeout(r,600+Math.random()*500));
+  const order = D.orders?.find(o=>String(o.sales_order_id)===String(RV.orderId));
+  t.innerHTML = rvLocalAnswer(q, order, RV.items, RV.orderId)
+    + '<span style="font-size:9px;color:var(--text-3);font-family:var(--font-m);margin-top:4px;display:block">local mode</span>';
+  btn.disabled=false; msgs.scrollTop=msgs.scrollHeight;
+}
+
+function rvAppendMsg(role, html, container) {
+  const el=document.createElement('div');
+  el.className=`rv-bubble ${role}`;
+  el.innerHTML=html;
+  container.appendChild(el);
+  container.scrollTop=container.scrollHeight;
+  return el;
+}
+
+function rvBuildCtx(order, items, id) {
+  if (!order) return `Order ${id}: data unavailable`;
+  const dels=[...new Set(items.map(i=>i.delivery_id).filter(rvReal))];
+  const bils=[...new Set(items.map(i=>i.billing_doc_id).filter(rvReal))];
+  const accs=[...new Set(items.map(i=>i.accounting_document).filter(rvReal))];
+  const i0=items[0]||{};
+  const flags=rvComputeFlags(order,items);
+  return [
+    `ORDER: ${order.sales_order_id} | Customer: ${order.customer_name||order.customer_id}`,
+    `Amount: ₹${order.order_total_net_amount} | Paid: ₹${order.total_paid_amount||0} | Stage: ${order.lifecycle_stage}`,
+    `Terms: ${order.payment_terms} (Net ${order.expected_payment_days||30}d)`,
+    `ENTITIES: Delivery=${dels[0]||'none'} | Billing=${bils[0]||'none'} | Payment=${accs[0]||'none'}`,
+    `DATES: Created=${String(order.order_created_date||'').slice(0,10)} | Del=${String(i0.delivery_created_date||'').slice(0,10)} | Bil=${String(i0.billing_date||'').slice(0,10)} | Pay=${String(i0.payment_posting_date||'').slice(0,10)}`,
+    `CYCLE: O→D=${order.order_to_delivery_days||'—'}d | D→B=${order.delivery_to_billing_days||'—'}d | B→P=${order.billing_to_payment_days||'—'}d`,
+    `FLAGS (${flags.length}): ${flags.length?flags.map(f=>`${f.label}[${f.fk}=${f.fv}]`).join(' | '):'none'}`,
+    `BOOLEANS: cancelled=${order.is_billing_cancelled} delayed=${order.is_delivery_delayed} unpaid=${order.is_unpaid} missing=${order.missing_stage}`,
+    `ITEMS (${items.length}): ${items.slice(0,3).map(i=>`Item${i.sales_order_item}:${(i.material_desc||i.material_id||'').slice(0,20)}=₹${i.item_net_amount}`).join(' | ')}`,
+  ].join('\n');
+}
+
+function rvLocalAnswer(q, order, items, id) {
+  if (!order) return `Order <strong>${id}</strong> not in local data.`;
+  const ql=q.toLowerCase(), stage=order.lifecycle_stage, isCan=stage==='cancelled';
+  const cust=(order.customer_name||order.customer_id||'').split(',')[0];
+  const amt=rvFmtCurrency(order.order_total_net_amount);
+  const i0=items[0]||{};
+  const flags=rvComputeFlags(order,items);
+  const flagNames=flags.map(f=>f.label.toLowerCase());
+  const o2d=Number(order.order_to_delivery_days);
+  const d2b=Number(order.delivery_to_billing_days);
+  const b2p=Number(order.billing_to_payment_days);
+
+  if (ql.includes('delay')||ql.includes('late')||ql.includes('slow')||ql.includes('stuck')) {
+    if (isCan) return `Order <strong>${id}</strong> was <strong>cancelled</strong>. Rule: <code>is_billing_cancelled=True</code>. Billing doc ${rvFmt(i0.billing_doc_id||'—')} reversed.`;
+    if (stage==='ordered') return `Order <strong>${id}</strong> stuck at <strong>Ordered</strong>. Rule: <code>missing_stage=True</code>. No delivery since ${rvFmtDate(order.order_created_date)}. Check plant ${i0.plant||'—'}.`;
+    if (rvReal(order.order_to_delivery_days)&&!isNaN(o2d)&&o2d>RV_THRESHOLDS.DELIVERY_DELAY_DAYS)
+      return `Delivery took <strong>${Math.round(o2d)}d</strong>. Rule: <code>order_to_delivery_days (${Math.round(o2d)}) &gt; ${RV_THRESHOLDS.DELIVERY_DELAY_DAYS}d threshold</code>. Delivery ID: ${rvFmt(i0.delivery_id||'—')}, plant: ${i0.delivery_plant||i0.plant||'—'}.`;
+    if (rvReal(order.delivery_to_billing_days)&&!isNaN(d2b)&&d2b>RV_THRESHOLDS.BILLING_DELAY_DAYS)
+      return `Billing delay: <strong>${Math.round(d2b)}d</strong>. Rule: <code>delivery_to_billing_days (${Math.round(d2b)}) &gt; ${RV_THRESHOLDS.BILLING_DELAY_DAYS}d</code>. Billing doc: ${rvFmt(i0.billing_doc_id||'—')}.`;
+    return `No delay for order <strong>${id}</strong>. O→D: ${rvFmtDays(order.order_to_delivery_days)}, D→B: ${rvFmtDays(order.delivery_to_billing_days)}.`;
+  }
+
+  if (ql.includes('payment')||ql.includes('paid')||ql.includes('invoice')) {
+    if (stage==='paid') return `Order <strong>${id}</strong> (${amt}) <strong>fully paid</strong>. Rule: <code>lifecycle_stage=paid</code>. Cleared in ${rvFmtDays(order.billing_to_payment_days)} after billing. Acct: ${rvFmt(i0.accounting_document||'—')}.`;
+    if (flagNames.some(n=>n.includes('unpaid'))) return `Open invoice for <strong>${id}</strong>. Rule: <code>is_unpaid=True</code>. Billed ${rvFmtDate(i0.billing_date)}, doc ${rvFmt(i0.billing_doc_id||'—')}. Due: ${amt}. Terms: ${order.payment_terms} (Net ${order.expected_payment_days||30}d).`;
+    if (flagNames.some(n=>n.includes('overdue'))) return `Payment overdue. Rule: <code>billing_to_payment_days (${Math.round(b2p)}d) &gt; ${order.expected_payment_days||30}d terms</code>.`;
+    if (isCan) return `No payment — billing cancelled. Rule: <code>is_billing_cancelled=True</code>.`;
+    return `Order <strong>${id}</strong> at <em>${stage}</em>. Amount: ${amt}.`;
+  }
+
+  if (ql.includes('cancel')) {
+    if (isCan) return `Order <strong>${id}</strong>: <strong>billing cancelled</strong>. Rule: <code>is_billing_cancelled=True</code>. Doc ${rvFmt(i0.billing_doc_id||'—')} reversed. <em>${cust}</em> has 48/56 total cancellations.`;
+    return `Not cancelled. Rule: <code>is_billing_cancelled=False</code>. Stage: <strong>${stage}</strong>.`;
+  }
+
+  if (ql.includes('flag')||ql.includes('issue')||ql.includes('problem')) {
+    if (!flags.length) return `No flags for <strong>${id}</strong> — lifecycle clean. Stage: <em>${stage}</em>.`;
+    return `<strong>${id}</strong> has ${flags.length} flag${flags.length>1?'s':''}:<br/><br/>`+flags.map(f=>`• <strong>${f.label}</strong>: ${f.explanation.replace(/<[^>]+>/g,'')}`).join('<br/>');
+  }
+
+  if (ql.includes('summar')||ql.includes('status')||ql.includes('overview')) {
+    const fs=flags.length?flags.map(f=>`<em>${f.label}</em>`).join(', '):'none';
+    return `<strong>Order ${id}</strong> · <em>${order.customer_name||order.customer_id}</em><br/>
+${amt} · <strong>${stage}</strong><br/>
+Del: ${rvFmt(i0.delivery_id||'—')} · Bil: ${rvFmt(i0.billing_doc_id||'—')} · Acct: ${rvFmt(i0.accounting_document||'—')}<br/>
+O→D: ${rvFmtDays(order.order_to_delivery_days)} · D→B: ${rvFmtDays(order.delivery_to_billing_days)} · B→P: ${rvFmtDays(order.billing_to_payment_days)}<br/>
+Flags (${flags.length}): ${fs}`;
+  }
+
+  return `Order <strong>${id}</strong> · <em>${cust}</em> · ${amt} · <strong>${stage}</strong>. Flags: ${flags.length?flags.map(f=>f.label).join(', '):'none'}.`;
+}
+
+async function boot(){
+  try{
+    await loadData();
+    await go('dashboard');
+  }catch(e){
+    document.getElementById('page-body').innerHTML=`
+      <div style="padding:80px;text-align:center;color:var(--text-2)">
+        <div style="font-size:40px;margin-bottom:16px">⚠</div>
+        <div style="font-family:var(--font-d);font-size:18px;margin-bottom:8px">Could not load data</div>
+        <div style="font-size:12px;font-family:var(--font-m);color:var(--text-3);margin-bottom:16px">${e.message}</div>
+        <div style="font-size:12px;color:var(--text-3)">Start a local HTTP server from the project root:<br/><br/>
+          <code style="font-family:var(--font-m);color:var(--accent-2);font-size:13px">python -m http.server 8080</code><br/>
+          <span style="font-size:11px">then open http://localhost:8080/frontend/</span>
+        </div>
+      </div>`;
+  }
+}
+boot();
+</script>
+</body>
+</html>
