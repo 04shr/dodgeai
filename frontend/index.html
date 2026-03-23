@@ -363,46 +363,35 @@ async function apiPost(path, body={}) {
 
 // ── Data loading — API first, static fallback ───────────
 async function loadData() {
-  // Try live backend first
   try {
     const health = await apiGet('/health');
-    if (health.status === 'ok') {
-      D.backendOnline = true;
-      const [k, c, ordersRes] = await Promise.all([
-        apiGet('/api/kpis/summary'),
-        apiGet('/api/kpis/customers'),
-        apiGet('/api/orders', {limit:500}),
-      ]);
-      D.kpis = k; D.customers = c;
-      D.orders = ordersRes.data;
-      const badge = document.getElementById('nav-badge');
-      if (badge) badge.textContent = D.orders.filter(o => Number(o.max_issue_severity)>0).length;
-      console.log('✓ Loaded from live API');
-      return;
+
+    if (health.status !== 'ok') {
+      throw new Error('Backend not ready');
     }
-  } catch(e) {
-    console.warn('Backend offline, falling back to static files:', e.message);
-  }
 
-  // Static file fallback
-const bases = ['../../backend/data/processed/'];
-  for (const base of bases) {
-    try {
-      const [k, c, o] = await Promise.all([
-        fetch(base+'kpi_summary.json').then(r => { if(!r.ok) throw 0; return r.json(); }),
-        fetch(base+'customer_kpis.json').then(r => { if(!r.ok) throw 0; return r.json(); }),
-        fetch(base+'unified_o2c_orders.csv').then(r => { if(!r.ok) throw 0; return r.text(); }),
-      ]);
-      D.kpis = k; D.customers = c; D.orders = parseCSV(o);
-      const badge = document.getElementById('nav-badge');
-      if (badge) badge.textContent = D.orders.filter(o => Number(o.max_issue_severity)>0).length;
-      console.log('✓ Loaded from static files');
-      return;
-    } catch(e) { continue; }
+    const [k, c, ordersRes] = await Promise.all([
+      apiGet('/api/kpis/summary'),
+      apiGet('/api/kpis/customers'),
+      apiGet('/api/orders', { limit: 500 }),
+    ]);
+
+    D.kpis = k;
+    D.customers = c;
+    D.orders = ordersRes.data;
+
+    console.log('✓ Loaded from backend');
+  } catch (e) {
+    console.error('❌ Backend failed:', e.message);
+
+    document.getElementById('page-body').innerHTML = `
+      <div class="loading-screen">
+        ⚠️ Backend not reachable <br/>
+        Start Render service or check API URL
+      </div>
+    `;
   }
-  throw new Error('Could not load data — start a local HTTP server from the project root');
 }
-
 // ── Backend health check ────────────────────────────────
 async function checkBackend() {
   const el = document.getElementById('backend-status');
@@ -1171,56 +1160,54 @@ function escRv(s) { return s.replace(/'/g,"\\'"); }
 
 async function rvLoad(id) {
   if (!id) return;
+
   RV.orderId = id;
   document.getElementById('rv-input').value = id;
 
-  const canvas = document.getElementById('rv-canvas');
-  const empty  = document.getElementById('rv-empty');
   const flow   = document.getElementById('rv-flow');
+  const empty  = document.getElementById('rv-empty');
   if (!flow) return;
 
-  // Get order from D.orders (already loaded)
-  let order = D.orders ? D.orders.find(o => String(o.sales_order_id) === String(id)) : null;
+  let order = null;
   let items = [];
 
-  // Try API if not found locally
-  if (!order && D.backendOnline) {
-    try {
-      const [o, ctx] = await Promise.all([
-        apiGet(`/api/orders/${id}`),
-        apiGet(`/api/orders/${id}/items`),
-      ]);
-      if (o && !o.error) { order = o; items = (ctx.items||[]); }
-    } catch(e) {}
+  // ✅ 1. Try from already loaded data
+  if (D.orders) {
+    order = D.orders.find(o => String(o.sales_order_id) === String(id));
   }
 
-  // Get items from CSV data
-  if (!items.length && D.orders) {
-    // Parse items from unified_o2c.csv via the already-loaded ITEMS in relationship-view
-    // Since index.html loads orders CSV only, fetch items separately
-    try {
-      const bases = ['../data/processed/', 'data/processed/'];
-      for (const base of bases) {
-        try {
-          const csv = await fetch(base + 'unified_o2c.csv').then(r => { if(!r.ok) throw 0; return r.text(); });
-          const allItems = parseCSV(csv);
-          items = allItems.filter(i => String(i.sales_order_id) === String(id));
-          if (items.length) break;
-        } catch(e) { continue; }
-      }
-    } catch(e) {}
+  // ✅ 2. Always fetch full data from backend (BEST)
+  try {
+    const [o, ctx] = await Promise.all([
+      apiGet(`/api/orders/${id}`),
+      apiGet(`/api/orders/${id}/items`)
+    ]);
+
+    if (o && !o.error) {
+      order = o;
+      items = ctx.items || [];
+    }
+  } catch (e) {
+    console.warn("API failed, using local data if available");
   }
 
   RV.items = items;
 
+  // ❌ No CSV fallback anymore
+
   if (!order) {
     flow.style.display = 'flex';
     if (empty) empty.style.display = 'none';
-    flow.innerHTML = `<div style="color:var(--red);font-family:var(--font-m);font-size:12px;padding:40px">Order ${id} not found. Try: ${RV_SAMPLES.join(', ')}</div>`;
+
+    flow.innerHTML = `
+      <div style="color:var(--red);font-family:var(--font-m);font-size:12px;padding:40px">
+        Order ${id} not found
+      </div>`;
     return;
   }
 
   if (empty) empty.style.display = 'none';
+
   flow.style.display = 'flex';
   flow.style.flexDirection = 'column';
   flow.style.alignItems = 'center';
@@ -1230,7 +1217,6 @@ async function rvLoad(id) {
   rvShowDetail('order', id, order, items);
   rvTab('detail');
 
-  // Mark order node as active
   setTimeout(() => {
     const first = flow.querySelector('.rv-node');
     if (first) first.classList.add('rv-active');
