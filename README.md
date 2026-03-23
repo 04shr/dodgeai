@@ -1,63 +1,84 @@
 # O2C Intelligence
 
-> AI-powered Order-to-Cash analytics platform for SAP data — built to surface bottlenecks, flag risks, and answer questions about every order in your pipeline.
+> AI-powered Order-to-Cash analytics platform for SAP data — built to surface bottlenecks, flag risks, and let you interrogate every order in plain English.
 
 ![Stack](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square)
 ![Stack](https://img.shields.io/badge/frontend-Vanilla%20JS-f7df1e?style=flat-square&logo=javascript&logoColor=black)
 ![Stack](https://img.shields.io/badge/database-Firebase%20Firestore-orange?style=flat-square&logo=firebase&logoColor=white)
 ![Stack](https://img.shields.io/badge/AI-Gemini%20%2F%20OpenRouter%20%2F%20Groq-blueviolet?style=flat-square)
 
+**[→ View the live demo](https://dodgetask.netlify.app/)**
+
 ---
 
-## What it does
+## Features
 
-O2C Intelligence ingests SAP order data and turns it into a live analytics dashboard with AI-assisted investigation. The platform covers the full order lifecycle — from sales order creation through delivery, billing, and payment — and automatically flags anything that looks wrong.
+### KPI Dashboard
+Real-time metrics across the entire O2C pipeline — total revenue, Days Sales Outstanding (DSO), collection rate, average cycle times, and cancellation counts. Every number is computed from the unified SAP dataset and refreshes on load.
 
-**Core capabilities:**
+### Order Explorer
+Browse and filter every sales order with lifecycle stage badges (`Ordered → Delivered → Billed → Paid`), risk scores, payment terms, and cycle time breakdowns. Click any order to drill into its full document chain.
 
-- **KPI Dashboard** — Revenue, DSO, collection rate, cycle times, cancellations, and more at a glance
-- **Order Explorer** — Browse and filter every order with status badges, risk scores, and lifecycle stage tracking
-- **Issue Detection** — Automatically surfaces delivery delays, billing gaps, unpaid invoices, cancelled documents, and missing stages using rule-based flags
-- **Customer Intelligence** — Per-customer performance view with payment behaviour, order history, and risk profiling
-- **Relationship View** — Interactive graph showing the document chain for any order (SO → Delivery → Billing → Payment → Journal)
-- **AI Chat** — Ask natural language questions about any order or the overall pipeline; answers are grounded in your actual data with rule citations
+### Automated Issue Detection
+The platform continuously scans orders against a set of rules and flags anything anomalous:
+
+| Flag | Condition |
+|---|---|
+| Delivery Delay | `order_to_delivery_days` exceeds threshold |
+| Billing Delay | `delivery_to_billing_days` exceeds threshold |
+| Unpaid Invoice | `is_unpaid = True` |
+| Payment Overdue | `billing_to_payment_days > expected_payment_days` (per payment terms) |
+| Billing Cancelled | `is_billing_cancelled = True` |
+| Missing Stage | Order stuck with no downstream document (`missing_stage = True`) |
+
+### Relationship View
+An interactive document graph for any order — visualises the full chain from Sales Order through Delivery, Billing, Payment, and Journal Entry. Each node shows the document ID and key dates; edges show the join keys used (`referenceSdDocument`, `accountingDocument`).
+
+### Customer Intelligence
+Per-customer breakdown of payment behaviour, order history, cancellation rate, and outstanding balances — useful for spotting at-risk accounts before they become write-offs.
+
+### Multi-Model AI Chat
+Ask natural language questions about any order or the whole pipeline. The AI layer uses a **use-case-aware LLM router** that picks the right model for each query type:
+
+| Query type | Primary model | Why |
+|---|---|---|
+| `nl_query` — conversational questions | Gemini | Best at dialogue and context retention |
+| `root_cause` — why is this order delayed? | OpenRouter / Claude | Best at multi-step reasoning |
+| `insights_summary` — pipeline-wide trends | Groq / LLaMA | Fastest and cheapest for summarisation |
+
+Each use-case has an **ordered fallback chain** — if the primary provider hits a rate limit or timeout, the next is tried automatically. The system never surfaces a provider error to the user.
+
+Answers are grounded in real order data and cite the specific rule or field that triggered each finding (e.g. `order_to_delivery_days (18) > 14d threshold`).
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                     Frontend                        │
-│  Vanilla HTML/CSS/JS  ·  Dark UI  ·  Chart.js       │
-│  index.html (dashboard + AI)                        │
-│  relationship-view.html (graph explorer)            │
-└────────────────────────┬────────────────────────────┘
-                         │ REST  /api/*
-┌────────────────────────▼────────────────────────────┐
-│                  FastAPI Backend                    │
-│  /api/kpis   /api/orders   /api/issues              │
-│  /api/customers            /api/ai                  │
-│                                                     │
-│  DataService  (in-memory Pandas cache)              │
-│  Multi-LLM router  (Gemini → OpenRouter → Groq)     │
-└───────────┬─────────────────────────┬───────────────┘
-            │                         │
-┌───────────▼──────────┐   ┌──────────▼──────────────┐
-│  Firebase Firestore  │   │   ETL Pipeline          │
-│  (persistent store)  │   │   pandas · o2c_pipeline  │
-└──────────────────────┘   └─────────────────────────┘
+Frontend (HTML/CSS/JS)
+        ↕  REST /api/*
+FastAPI Backend
+   ├── DataService     (Pandas in-memory cache of unified_o2c.csv)
+   ├── LLM Router      (Gemini / OpenRouter / Groq — use-case routed with fallback)
+   └── Firebase Firestore  (persistent store)
+        ↕
+Pandas ETL Pipeline
+   SAP JSONL (raw) → unified_o2c.csv + kpi_summary.json
 ```
 
-**Tech stack:**
+The frontend is fully static by default — pages load from pre-processed CSV/JSON for instant render with no backend required. AI features and write operations go through FastAPI.
+
+---
+
+## Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | Vanilla HTML/CSS/JS, Chart.js, Syne + IBM Plex Mono fonts |
-| Backend | Python 3.11+, FastAPI, Uvicorn |
+| Frontend | Vanilla HTML/CSS/JS, Chart.js |
+| Backend | Python, FastAPI, Uvicorn |
 | Database | Firebase Firestore |
-| Data processing | Pandas ETL pipeline |
-| AI | Gemini (primary), OpenRouter, Groq (fallback chain) |
+| Data | Pandas ETL → `unified_o2c.csv`, `kpi_summary.json`, `customer_kpis.json` |
+| AI | Gemini · OpenRouter · Groq — use-case routed with automatic fallback |
 
 ---
 
@@ -66,138 +87,36 @@ O2C Intelligence ingests SAP order data and turns it into a live analytics dashb
 ```
 o2c-intelligence/
 ├── frontend/
-│   ├── index.html              # Main dashboard (KPIs, orders, issues, AI chat)
-│   └── relationship-view.html  # Document graph explorer
+│   ├── index.html                  # Dashboard, orders, issues, AI chat
+│   ├── relationship-view.html      # Document graph explorer
+│   └── src/
+│       ├── components/
+│       ├── pages/
+│       ├── services/
+│       └── utils/
 │
 ├── backend/
-│   ├── main.py                 # FastAPI app entry point
+│   ├── main.py
 │   └── app/
-│       ├── routers/
-│       │   ├── kpis.py
-│       │   ├── orders.py
-│       │   ├── issues.py
-│       │   ├── customers.py
-│       │   └── ai.py
-│       └── services/
-│           └── data_service.py
+│       ├── ai/
+│       │   ├── llm_router.py       # Use-case → model routing + fallback chain
+│       │   ├── gemini_client.py
+│       │   ├── groq_client.py
+│       │   ├── openrouter_client.py
+│       │   └── prompts.py
+│       ├── models/                 # Pydantic schemas (order, customer, kpi, issue)
+│       ├── routers/                # /api/kpis  orders  issues  customers  ai
+│       └── services/               # DataService + business logic
 │
 ├── pipeline/
-│   └── o2c_pipeline.py         # Pandas ETL — SAP data → Firestore
+│   └── o2c_pipeline.py             # SAP JSONL → unified CSV + KPI JSON
 │
-└── README.md
+└── data/
+    └── processed/
+        ├── unified_o2c.csv         # Grain: one row per order line item
+        ├── unified_o2c_orders.csv  # Grain: one row per order
+        ├── kpi_summary.json
+        └── customer_kpis.json
 ```
-
----
-
-## Getting started
-
-### Prerequisites
-
-- Python 3.11+
-- A Firebase project with Firestore enabled
-- API keys for at least one LLM provider (Gemini, OpenRouter, or Groq)
-
-### 1. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Configure environment
-
-Create a `.env` file in the `backend/` directory:
-
-```env
-# Firebase
-FIREBASE_CREDENTIALS_PATH=path/to/serviceAccount.json
-
-# LLM providers (add whichever you have)
-GEMINI_API_KEY=your_key_here
-OPENROUTER_API_KEY=your_key_here
-GROQ_API_KEY=your_key_here
-
-# CORS (optional, defaults to localhost:5173 and :8080)
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8080
-```
-
-### 3. Run the ETL pipeline
-
-Loads and transforms your SAP export into Firestore:
-
-```bash
-cd pipeline
-python o2c_pipeline.py
-```
-
-### 4. Start the backend
-
-```bash
-cd backend
-uvicorn main:app --reload --port 8000
-```
-
-The API will be available at `http://localhost:8000`.  
-Interactive docs: `http://localhost:8000/docs`
-
-### 5. Serve the frontend
-
-```bash
-cd frontend
-python -m http.server 5173
-```
-
-Open `http://localhost:5173` in your browser.
-
----
-
-## API reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Server status and data load check |
-| `GET` | `/api/kpis` | Aggregate KPIs (revenue, DSO, cycle times, etc.) |
-| `GET` | `/api/orders` | Paginated order list with filters |
-| `GET` | `/api/orders/{id}` | Single order detail with line items |
-| `GET` | `/api/issues` | All flagged orders with issue type breakdown |
-| `GET` | `/api/customers` | Customer-level performance summary |
-| `POST` | `/api/ai/chat` | Natural language Q&A grounded in order data |
-
-Full interactive docs available at `/docs` when the backend is running.
-
----
-
-## Issue detection rules
-
-The platform flags orders that match any of the following conditions:
-
-| Flag | Rule |
-|---|---|
-| **Delivery Delay** | `order_to_delivery_days` exceeds threshold |
-| **Billing Delay** | `delivery_to_billing_days` exceeds threshold |
-| **Unpaid Invoice** | `is_unpaid = True` |
-| **Payment Overdue** | `billing_to_payment_days > expected_payment_days` |
-| **Billing Cancelled** | `is_billing_cancelled = True` |
-| **Missing Stage** | `missing_stage = True` (order stuck with no downstream document) |
-
-All flag thresholds are configurable in the pipeline config.
-
----
-
-## AI chat
-
-The AI endpoint accepts natural language questions about orders or the overall pipeline. It works in two modes:
-
-- **Order-scoped** — Ask about a specific order ID (e.g. *"Why is order 4500012345 delayed?"*). The model receives the full document chain, cycle times, flags, and payment status as context, and cites the rule that triggered each answer.
-- **Pipeline-wide** — Ask aggregate questions (e.g. *"Which customers have the most overdue invoices?"*). The model queries the in-memory dataset via the `/api/ai` router.
-
-The LLM router tries Gemini first, then falls back to OpenRouter, then Groq, so the system stays up even if a provider has an outage.
-
----
-
-## Development notes
-
-- The `DataService` loads all order data into memory on startup for fast query performance. Call `DataService.load()` to reload without restarting.
-- CORS is currently set to `allow_origins=["*"]` for local development. Lock this down before any production deployment.
-- Request timing is logged automatically via middleware — check the `X-Process-Time-Ms` response header or server logs.
 
 ---
