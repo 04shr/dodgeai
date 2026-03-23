@@ -741,11 +741,12 @@ body {
   </aside>
 </div>
 
-<script>
+<script type="module">
+
 // ══════════════════════════════════════════════════════
 // CONFIG + DATA
 // ══════════════════════════════════════════════════════
-const API = import.meta.env.VITE_API_URL;
+const BASE = "https://dodgeai-backend.onrender.com";
 // ── Rule thresholds (match backend config) ───────────
 const FLAG_THRESHOLDS = {
   DELIVERY_DELAY_DAYS:  3,
