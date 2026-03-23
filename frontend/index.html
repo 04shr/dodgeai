@@ -347,7 +347,7 @@ const D = { kpis:null, customers:null, orders:null, backendOnline:false };
 async function apiGet(path, params={}) {
   const qs = new URLSearchParams(params).toString();
   const url = `${API_BASE}${path}${qs?'?'+qs:''}`;
-  const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
+  const r = await fetch(url, {signal: AbortSignal.timeout(20000)});
   if (!r.ok) throw new Error(`API ${r.status}: ${path}`);
   return r.json();
 }
@@ -366,9 +366,7 @@ async function loadData() {
   try {
     const health = await apiGet('/health');
 
-    if (health.status !== 'ok') {
-      throw new Error('Backend not ready');
-    }
+    if (health.status !== 'ok') throw new Error('Backend not ready');
 
     const [k, c, ordersRes] = await Promise.all([
       apiGet('/api/kpis/summary'),
@@ -380,16 +378,20 @@ async function loadData() {
     D.customers = c;
     D.orders = ordersRes.data;
 
-    console.log('✓ Loaded from backend');
   } catch (e) {
-    console.error('❌ Backend failed:', e.message);
+    console.warn('Retrying backend...');
 
-    document.getElementById('page-body').innerHTML = `
-      <div class="loading-screen">
-        ⚠️ Backend not reachable <br/>
-        Start Render service or check API URL
-      </div>
-    `;
+    // retry once after delay (for cold start)
+    await new Promise(r => setTimeout(r, 20000));
+
+    try {
+      return await loadData();
+    } catch (e2) {
+      document.getElementById('page-body').innerHTML = `
+        <div class="loading-screen">
+          ⚠️ Backend waking up... please refresh in a few seconds
+        </div>`;
+    }
   }
 }
 // ── Backend health check ────────────────────────────────
