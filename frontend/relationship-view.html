@@ -745,8 +745,7 @@ body {
 // ══════════════════════════════════════════════════════
 // CONFIG + DATA
 // ══════════════════════════════════════════════════════
-const API = 'http://localhost:8000';
-
+const API = import.meta.env.VITE_API_URL;
 // ── Rule thresholds (match backend config) ───────────
 const FLAG_THRESHOLDS = {
   DELIVERY_DELAY_DAYS:  3,
@@ -812,7 +811,7 @@ async function loadData() {
   }
 
   // Load CSV files (primary for items, fallback for orders)
-  const bases = ['../data/processed/', 'data/processed/', './data/processed/'];
+  const bases = ['/data/processed/'];
   for (const base of bases) {
     try {
       const fetches = [fetch(base + 'unified_o2c.csv').then(r => { if(!r.ok) throw 0; return r.text(); })];
